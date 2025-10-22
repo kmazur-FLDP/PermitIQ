@@ -35,8 +35,8 @@ export default function LoginPage() {
     }
 
     if (data.user) {
-      // Redirect to map
-      router.push('/map')
+      // Redirect to dashboard
+      router.push('/dashboard')
       router.refresh()
     }
 

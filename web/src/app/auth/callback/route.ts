@@ -11,6 +11,6 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Redirect to map after successful authentication
-  return NextResponse.redirect(`${origin}/map`)
+  // Redirect to dashboard after successful authentication
+  return NextResponse.redirect(`${origin}/dashboard`)
 }

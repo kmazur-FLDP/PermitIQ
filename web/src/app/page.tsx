@@ -4,9 +4,9 @@ import { getUser } from '@/lib/auth'
 export default async function Home() {
   const user = await getUser()
   
-  // Redirect to map if authenticated, otherwise to login
+  // Redirect to dashboard if authenticated, otherwise to login
   if (user) {
-    redirect('/map')
+    redirect('/dashboard')
   } else {
     redirect('/login')
   }

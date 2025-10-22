@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/map', '/competitors', '/alerts']
+  const protectedRoutes = ['/dashboard', '/map', '/competitors', '/alerts', '/admin']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -48,9 +48,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to map if already logged in and trying to access login
+  // Redirect to dashboard if already logged in and trying to access login
   if (request.nextUrl.pathname === '/login' && user) {
-    return NextResponse.redirect(new URL('/map', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
