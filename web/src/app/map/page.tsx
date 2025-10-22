@@ -1,6 +1,6 @@
 import { getUser, getUserProfile } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { MapHeader } from '@/components/MapHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { PermitMap } from '@/components/PermitMap'
 
 export default async function MapPage() {
@@ -12,14 +12,10 @@ export default async function MapPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <MapHeader 
-        userRole={profile?.role as 'admin' | 'user' | undefined}
-        userName={profile?.full_name || user.email || undefined}
-      />
-      <main className="flex-1 relative">
+    <DashboardLayout userEmail={user.email} userRole={profile?.role || null}>
+      <div className="h-[calc(100vh-6rem)] relative">
         <PermitMap />
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
