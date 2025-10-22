@@ -5,11 +5,15 @@
   # Base directory for the build
   base = "web"
   
-  # Build command - use webpack build instead of turbopack for stability
-  command = "npm ci && npm run build:webpack"
+  # Build command - install plugin and build
+  command = "npm ci && npm install -D @netlify/plugin-nextjs && npm run build"
   
-  # Output directory (relative to base)
+  # Publish directory - let Netlify plugin handle this
   publish = ".next"
+
+# Use Netlify's Next.js plugin for proper deployment
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   # Node version
@@ -17,9 +21,6 @@
   
   # Next.js specific
   NEXT_TELEMETRY_DISABLED = "1"
-  
-  # Enable caching
-  NPM_FLAGS = "--prefer-offline --no-audit"
 
 # Environment variables (set these in Netlify Dashboard)
 # NEXT_PUBLIC_SUPABASE_URL
