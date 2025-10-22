@@ -8,6 +8,7 @@ export type CompetitorMatch = Database['public']['Tables']['competitor_permit_ma
 export type Alert = Database['public']['Tables']['alert_notifications']['Row']
 export type AlertRule = Database['public']['Tables']['alert_rules']['Row']
 export type Statistics = Database['public']['Tables']['erp_statistics']['Row']
+export type UserProfile = Database['public']['Tables']['user_profiles']['Row']
 
 // Extended types with relationships
 export interface PermitWithCompetitors extends Permit {
@@ -88,17 +89,8 @@ export interface ChartData {
   acreage: number
 }
 
-// User types
-export type UserRole = 'admin' | 'staff' | 'client'
-
-export interface UserProfile {
-  id: string
-  email: string
-  role: UserRole
-  full_name: string | null
-  company: string | null
-  created_at: string
-}
+// User types - using database type
+export type UserRole = 'admin' | 'user'
 
 // API Response types
 export interface ApiResponse<T> {

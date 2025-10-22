@@ -326,6 +326,41 @@ export interface Database {
           created_at?: string
         }
       }
+      user_profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          role: string
+          default_county: string | null
+          notification_preferences: Json | null
+          created_at: string
+          updated_at: string
+          last_login_at: string | null
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: string
+          default_county?: string | null
+          notification_preferences?: Json | null
+          created_at?: string
+          updated_at?: string
+          last_login_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          role?: string
+          default_county?: string | null
+          notification_preferences?: Json | null
+          created_at?: string
+          updated_at?: string
+          last_login_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
