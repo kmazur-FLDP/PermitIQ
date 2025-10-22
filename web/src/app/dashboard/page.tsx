@@ -14,7 +14,7 @@ async function getDashboardStats() {
   const { data: overallStats } = await supabase
     .from('dashboard_overall_stats')
     .select('*')
-    .single()
+    .single() as { data: { total_permits: number; permits_last_30_days: number; avg_acreage: number } | null }
   
   // Get top counties using RPC function (bypasses RLS)
   const { data: countyStats, error: countyError } = await supabase
@@ -59,10 +59,10 @@ async function getDashboardStats() {
     .order('month', { ascending: true })
     .limit(12)
   
-  const trendData = monthlyStats?.map(row => ({
+  const trendData = (monthlyStats || []).map((row: { month: string; permit_count: number }) => ({
     month: new Date(row.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
     count: row.permit_count
-  })) || []
+  }))
   
   // Get permits over time (last 12 months) using RPC function (bypasses RLS)
   const { data: timeStats, error: timeError } = await supabase
@@ -83,10 +83,10 @@ async function getDashboardStats() {
     .select('applicant_name, permit_count')
     .limit(10)
   
-  const topApplicants = applicantStats?.map(row => ({
+  const topApplicants = (applicantStats || []).map((row: { applicant_name: string; permit_count: number }) => ({
     applicant: row.applicant_name,
     count: row.permit_count
-  })) || []
+  }))
   
   return {
     totalPermits: overallStats?.total_permits || 0,
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
   const stats = await getDashboardStats()
 
   return (
-    <DashboardLayout userEmail={user.email} userRole={profile?.role || null}>
+    <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-8 animate-slide-in">

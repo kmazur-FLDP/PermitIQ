@@ -30,7 +30,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <DashboardLayout userEmail={user.email} userRole={profile?.role || null}>
+    <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
       <AdminClientPage />
     </DashboardLayout>
   )

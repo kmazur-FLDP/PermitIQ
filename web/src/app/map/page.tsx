@@ -12,7 +12,7 @@ export default async function MapPage() {
   }
 
   return (
-    <DashboardLayout userEmail={user.email} userRole={profile?.role || null}>
+    <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
       <div className="h-[calc(100vh-6rem)] relative">
         <PermitMap />
       </div>

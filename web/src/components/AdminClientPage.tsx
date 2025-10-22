@@ -74,13 +74,13 @@ export default function AdminClientPage() {
 
   const loadUsers = useCallback(async () => {
     // Use the SECURITY DEFINER function to bypass RLS
-    const { data, error } = await supabase.rpc('get_all_users')
+    const { data, error } = await supabase.rpc('get_all_users') as { data: UserProfile[] | null; error: unknown }
 
     if (error) {
       console.error('Error loading users:', error)
     } else if (data) {
       console.log('Loaded users:', data.length, 'users')
-      setUsers(data as UserProfile[])
+      setUsers(data)
     }
   }, [supabase])
 
@@ -113,7 +113,8 @@ export default function AdminClientPage() {
 
   async function handleUpdateUser(userId: string, updates: Partial<UserProfile>) {
     // Use the admin function to update user
-    const { error } = await supabase.rpc('admin_update_user', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.rpc as any)('admin_update_user', {
       user_id: userId,
       new_full_name: updates.full_name || null,
       new_role: updates.role || null
@@ -133,7 +134,8 @@ export default function AdminClientPage() {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
 
     // Use the admin function to delete user
-    const { error } = await supabase.rpc('admin_delete_user', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.rpc as any)('admin_delete_user', {
       user_id: userId
     })
 

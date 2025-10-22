@@ -215,6 +215,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   return (
     <div className="h-full w-full relative">
       <MapContainer
+        // @ts-expect-error - react-leaflet v5 type definitions issue
         center={center}
         zoom={7}
         style={{ height: '100%', width: '100%' }}
@@ -222,6 +223,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         attributionControl={false}
       >
         <TileLayer
+          // @ts-expect-error - react-leaflet v5 type definitions issue
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
