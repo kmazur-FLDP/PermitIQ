@@ -64,9 +64,9 @@ export default function HeatmapLayer({ permits }: HeatmapLayerProps) {
           maxZoom: 13,
           max: 1.0,
           gradient: {
-            0.0: '#0066CC',  // Blue
-            0.5: '#00CED1',  // Cyan
-            1.0: '#20B2AA'   // Teal
+            0.0: '#FFFF00',  // Yellow (low density)
+            0.5: '#FF8C00',  // Orange (medium density)
+            1.0: '#FF0000'   // Red (high density)
           },
           isHeatLayer: true  // Custom flag to identify our heat layer
         })

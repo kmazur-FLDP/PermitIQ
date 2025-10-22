@@ -37,7 +37,7 @@ export interface PermitMarker {
   latitude: number
   applicant_name: string | null
   project_name: string | null
-  status: string | null
+  permit_status: string | null
   hotspot_score: number | null
   total_acreage: number | null
 }

@@ -17,7 +17,7 @@ export interface Database {
           applicant_name: string | null
           project_name: string | null
           permit_type: string | null
-          status: string | null
+          permit_status: string | null
           issue_date: string | null
           expiration_date: string | null
           total_acreage: number | null
@@ -40,7 +40,7 @@ export interface Database {
           applicant_name?: string | null
           project_name?: string | null
           permit_type?: string | null
-          status?: string | null
+          permit_status?: string | null
           issue_date?: string | null
           expiration_date?: string | null
           total_acreage?: number | null
@@ -63,7 +63,7 @@ export interface Database {
           applicant_name?: string | null
           project_name?: string | null
           permit_type?: string | null
-          status?: string | null
+          permit_status?: string | null
           issue_date?: string | null
           expiration_date?: string | null
           total_acreage?: number | null

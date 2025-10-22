@@ -17,8 +17,8 @@ const TileLayer = dynamic(
   () => import('react-leaflet').then((mod) => mod.TileLayer),
   { ssr: false }
 )
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
+const CircleMarker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.CircleMarker),
   { ssr: false }
 )
 const Popup = dynamic(
@@ -43,6 +43,7 @@ interface PermitMapProps {
 
 type ViewMode = 'markers' | 'heatmap'
 type DateRange = 'all' | '30' | '60' | '90' | '180' | '365'
+type DataRange = '5years' | 'all'
 
 export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [permits, setPermits] = useState<Permit[]>(initialPermits)
@@ -52,27 +53,86 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [selectedCounty, setSelectedCounty] = useState<string>('all')
   const [selectedType, setSelectedType] = useState<string>('all')
   const [dateRange, setDateRange] = useState<DateRange>('all')
+  const [dataRange, setDataRange] = useState<DataRange>('5years')
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const [counties, setCounties] = useState<string[]>([])
   const [permitTypes, setPermitTypes] = useState<string[]>([])
+  const [totalAvailable, setTotalAvailable] = useState<number>(0)
 
   useEffect(() => {
     const loadPermits = async () => {
       try {
+        setLoading(true)
+        setError(null)
         const supabase = createClient()
         
-        // Fetch permits with valid coordinates
-        const { data, error } = await supabase
+        // Calculate date cutoff based on dataRange
+        const fiveYearsAgo = new Date()
+        fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
+        
+        let allPermits: Permit[] = []
+        let page = 0
+        const pageSize = 1000
+        let hasMore = true
+
+        console.log(`Loading permits for range: ${dataRange}...`)
+
+        while (hasMore) {
+          let query = supabase
+            .from('erp_permits')
+            .select('*')
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+          
+          // Apply date filter for 5 years if not "all"
+          if (dataRange === '5years') {
+            query = query.gte('issue_date', fiveYearsAgo.toISOString())
+          }
+          
+          const { data, error } = await query
+            .order('updated_at', { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1)
+
+          if (error) throw error
+
+          if (data && data.length > 0) {
+            allPermits = [...allPermits, ...data]
+            page++
+            
+            // Show progress for large datasets
+            if (dataRange === 'all') {
+              console.log(`Loading permits: ${allPermits.length} loaded...`)
+            }
+            
+            // Check if we got less than pageSize (means we're done)
+            if (data.length < pageSize) {
+              hasMore = false
+            }
+          } else {
+            hasMore = false
+          }
+        }
+
+        // Get total count of all available permits
+        const { count } = await supabase
           .from('erp_permits')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
-          .order('updated_at', { ascending: false })
-          .limit(10000)
 
-        if (error) throw error
+        setTotalAvailable(count || 0)
+        console.log(`✅ Loaded ${allPermits.length} permits (${count} total available with coordinates)`)
 
-        const typedData = data as Permit[]
+        // Deduplicate permits by ID (in case of pagination issues or duplicate records)
+        const uniquePermits = Array.from(
+          new Map(allPermits.map(permit => [permit.id, permit])).values()
+        )
+        
+        if (uniquePermits.length !== allPermits.length) {
+          console.warn(`⚠️ Removed ${allPermits.length - uniquePermits.length} duplicate permits`)
+        }
+
+        const typedData = uniquePermits as Permit[]
         setPermits(typedData)
         
         // Extract unique counties and permit types for filters
@@ -92,9 +152,11 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
     if (initialPermits.length === 0) {
       loadPermits()
     } else {
+      setPermits(initialPermits)
       setLoading(false)
     }
-  }, [initialPermits])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataRange]) // Only re-run when dataRange changes, not on every render
 
   // Apply filters
   useEffect(() => {
@@ -173,9 +235,18 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             if (!permit.latitude || !permit.longitude) return null
             
             return (
-              <Marker
-                key={permit.permit_number}
-                position={[permit.latitude, permit.longitude]}
+              <CircleMarker
+                key={permit.id}
+                center={[permit.latitude, permit.longitude]}
+                pathOptions={{
+                  fillColor: '#ef4444',
+                  fillOpacity: 0.7,
+                  color: '#dc2626',
+                  weight: 2,
+                  opacity: 0.9
+                }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                {...({ radius: 6 } as any)}
               >
                 <Popup>
                   <div className="min-w-[280px] p-2">
@@ -191,8 +262,8 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                       {permit.permit_type && (
                         <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
                       )}
-                      {permit.status && (
-                        <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.status}</span></p>
+                      {permit.permit_status && (
+                        <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
                       )}
                       {permit.total_acreage && (
                         <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{permit.total_acreage.toLocaleString()}</span></p>
@@ -200,7 +271,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                     </div>
                   </div>
                 </Popup>
-              </Marker>
+              </CircleMarker>
             )
           })
         )}
@@ -211,6 +282,38 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         <h3 className="font-bold text-lg mb-3 text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
           🗺️ Map Controls
         </h3>
+        
+        {/* Data Range Toggle */}
+        <div className="mb-4 pb-4 border-b border-slate-200">
+          <label className="text-xs font-semibold text-slate-700 mb-2 block">Data Range</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setDataRange('5years')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                dataRange === '5years'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              📅 Last 5 Years
+            </button>
+            <button
+              onClick={() => setDataRange('all')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                dataRange === 'all'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              🌍 All Time
+            </button>
+          </div>
+          {totalAvailable > 0 && (
+            <p className="text-[10px] text-slate-500 mt-2 text-center">
+              {permits.length.toLocaleString()} of {totalAvailable.toLocaleString()} permits loaded
+            </p>
+          )}
+        </div>
         
         {/* View Mode Toggle */}
         <div className="mb-4 pb-4 border-b border-slate-200">
@@ -336,15 +439,15 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-600"></div>
+                  <div className="w-3 h-3 bg-yellow-400"></div>
                   <span>Low Density</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-cyan-500"></div>
+                  <div className="w-3 h-3 bg-orange-500"></div>
                   <span>Medium Density</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-teal-500"></div>
+                  <div className="w-3 h-3 bg-red-600"></div>
                   <span>High Density</span>
                 </div>
               </div>
