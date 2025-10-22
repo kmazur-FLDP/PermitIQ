@@ -1,0 +1,72 @@
+name: PermitIQ Daily ETL
+# Automated data collection from SWFWMD at 7 AM EST daily
+
+on:
+  # Run daily at 7 AM EST (12:00 UTC in non-DST, 11:00 UTC in DST)
+  schedule:
+    - cron: '0 12 * * *'  # 7 AM EST (adjust for DST if needed)
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no database writes)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  etl:
+    name: Fetch and Load SWFWMD Permit Data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run ETL Pipeline
+        env:
+          PERMITIQ_SUPABASE_URL: ${{ secrets.PERMITIQ_SUPABASE_URL }}
+          PERMITIQ_SUPABASE_SERVICE_KEY: ${{ secrets.PERMITIQ_SUPABASE_SERVICE_KEY }}
+          PERMITIQ_SWFWMD_API_URL: ${{ secrets.PERMITIQ_SWFWMD_API_URL }}
+          PERMITIQ_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          PERMITIQ_LOG_LEVEL: INFO
+        run: |
+          python etl/fetch_permits.py
+      
+      - name: Upload ETL logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: etl-logs-${{ github.run_number }}
+          path: etl.log
+          retention-days: 30
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 ETL Pipeline Failed - ' + new Date().toISOString().split('T')[0],
+              body: 'The daily ETL pipeline failed. Check the [workflow run](' + 
+                    context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + 
+                    '/actions/runs/' + context.runId + ') for details.',
+              labels: ['etl', 'automated', 'bug']
+            })
