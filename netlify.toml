@@ -5,8 +5,8 @@
   # Base directory for the build
   base = "web"
   
-  # Build command
-  command = "npm ci && npm run build"
+  # Build command - use npm install instead of ci (lockfile is gitignored)
+  command = "npm install && npm run build"
   
   # Publish directory - handled by Next.js plugin
   publish = ".next"
