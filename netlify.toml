@@ -5,8 +5,8 @@
   # Base directory for the build
   base = "web"
   
-  # Build command
-  command = "npm run build"
+  # Build command - use webpack build instead of turbopack for stability
+  command = "npm ci && npm run build:webpack"
   
   # Output directory (relative to base)
   publish = ".next"
@@ -17,6 +17,9 @@
   
   # Next.js specific
   NEXT_TELEMETRY_DISABLED = "1"
+  
+  # Enable caching
+  NPM_FLAGS = "--prefer-offline --no-audit"
 
 # Environment variables (set these in Netlify Dashboard)
 # NEXT_PUBLIC_SUPABASE_URL
