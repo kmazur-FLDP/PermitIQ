@@ -1,16 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Static export for Netlify deployment
-  // output: 'export', // Uncomment for static export (no server features)
-  
-  // Image optimization
+  // Image optimization - use Netlify's image CDN
   images: {
-    unoptimized: true, // Required for Netlify static deployment
+    domains: ['lqiglujleojwkcwfbxmr.supabase.co'], // Allow Supabase images
   },
   
-  // Trailing slashes
-  trailingSlash: true,
+  // Experimental features for Netlify
+  experimental: {
+    // Enable server actions for forms
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 export default nextConfig;

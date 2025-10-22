@@ -5,22 +5,19 @@
   # Base directory for the build
   base = "web"
   
-  # Build command - install plugin and build
-  command = "npm ci && npm install -D @netlify/plugin-nextjs && npm run build"
+  # Build command
+  command = "npm ci && npm run build"
   
-  # Publish directory - let Netlify plugin handle this
+  # Publish directory - handled by Next.js plugin
   publish = ".next"
 
-# Use Netlify's Next.js plugin for proper deployment
+# Use Netlify's Next.js plugin for full Next.js features
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
   # Node version
   NODE_VERSION = "20"
-  
-  # Next.js specific
-  NEXT_TELEMETRY_DISABLED = "1"
 
 # Environment variables (set these in Netlify Dashboard)
 # NEXT_PUBLIC_SUPABASE_URL
