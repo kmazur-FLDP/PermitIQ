@@ -13,7 +13,7 @@ INSERT INTO user_profiles (
 )
 VALUES (
     '538caddc-b2f3-499f-ab1d-507bd7243841'::uuid,
-    'your-email@example.com',  -- Update with your actual email
+    'kmmazur@fldandp.com',  -- Update with your actual email
     'Kevin Mazur',
     'admin',  -- Set as admin for full access
     'Hillsborough',  -- Update with your preferred default county
