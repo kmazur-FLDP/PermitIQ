@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { DashboardCharts } from '@/components/DashboardCharts'
+import { DashboardLayout } from '@/components/DashboardLayout'
 
 async function getDashboardStats() {
   const supabase = await createClient()
@@ -51,7 +52,7 @@ async function getDashboardStats() {
     count: row.permit_count
   })) || []
   
-  // Get monthly trends (last 12 months)
+  // Get monthly trends (last 12 months) - original trend data
   const { data: monthlyStats } = await supabase
     .from('dashboard_monthly_trends')
     .select('month, permit_count')
@@ -62,6 +63,19 @@ async function getDashboardStats() {
     month: new Date(row.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
     count: row.permit_count
   })) || []
+  
+  // Get permits over time (last 12 months) using RPC function (bypasses RLS)
+  const { data: timeStats, error: timeError } = await supabase
+    .rpc('get_dashboard_permits_over_time')
+  
+  if (timeError) {
+    console.error('Permits Over Time Error:', timeError)
+  }
+  
+  const permitsOverTime = (timeStats || []).map((row: { month: string; permit_count: number }) => ({
+    month: row.month,
+    count: row.permit_count
+  }))
   
   // Get top applicants
   const { data: applicantStats } = await supabase
@@ -81,6 +95,7 @@ async function getDashboardStats() {
     topPermitTypes,
     permitsByStatus,
     trendData,
+    permitsOverTime,
     topApplicants,
     avgAcreage: Math.round((overallStats?.avg_acreage || 0) * 100) / 100,
     topCounty: topCounties[0]?.county || 'N/A',
@@ -99,125 +114,115 @@ export default async function DashboardPage() {
   const stats = await getDashboardStats()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                <span className="text-white font-bold">P</span>
-              </div>
-              <span className="text-xl font-bold">PermitIQ</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/map">
-                <Button variant="outline" size="sm">
-                  Map View
-                </Button>
-              </Link>
-              {profile?.role === 'admin' && (
-                <Link href="/admin">
-                  <Button variant="outline" size="sm">
-                    Admin
-                  </Button>
-                </Link>
-              )}
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {profile?.full_name || user.email}
-              </span>
-              <form action="/auth/logout" method="post">
-                <Button type="submit" variant="outline" size="sm">
-                  Sign Out
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
+    <DashboardLayout userEmail={user.email} userRole={profile?.role || null}>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-gray-600">
+        {/* Header Section */}
+        <div className="mb-8 animate-slide-in">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-500 mb-2">
+            Dashboard
+          </h1>
+          <p className="text-lg text-slate-600">
             Environmental permit intelligence and analytics
           </p>
         </div>
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in">
             <CardHeader className="pb-3">
-              <CardDescription>Total Permits</CardDescription>
-              <CardTitle className="text-3xl">{stats.totalPermits.toLocaleString()}</CardTitle>
+              <CardDescription className="text-blue-600 font-semibold flex items-center">
+                <span className="mr-2">📊</span> Total Permits
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                {stats.totalPermits.toLocaleString()}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">All ERP permits</p>
+              <p className="text-sm text-slate-500">All ERP permits tracked</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Last 30 Days</CardDescription>
-              <CardTitle className="text-3xl">{stats.recentPermits.toLocaleString()}</CardTitle>
+              <CardDescription className="text-teal-600 font-semibold flex items-center">
+                <span className="mr-2">📅</span> Last 30 Days
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent">
+                {stats.recentPermits.toLocaleString()}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">New permits issued</p>
+              <p className="text-sm text-slate-500">New permits issued</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Top County</CardDescription>
-              <CardTitle className="text-2xl">{stats.topCounty}</CardTitle>
+              <CardDescription className="text-cyan-600 font-semibold flex items-center">
+                <span className="mr-2">🏆</span> Top County
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-500 bg-clip-text text-transparent">
+                {stats.topCounty}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">{stats.topCountyCount.toLocaleString()} permits</p>
+              <p className="text-sm text-slate-500">{stats.topCountyCount.toLocaleString()} permits</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.3s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Avg. Acreage</CardDescription>
-              <CardTitle className="text-3xl">{stats.avgAcreage.toFixed(1)}</CardTitle>
+              <CardDescription className="text-blue-600 font-semibold flex items-center">
+                <span className="mr-2">📏</span> Avg. Acreage
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
+                {stats.avgAcreage.toFixed(1)}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">Per permit</p>
+              <p className="text-sm text-slate-500">Acres per permit</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts */}
-        <DashboardCharts 
-          topCounties={stats.topCounties}
-          topPermitTypes={stats.topPermitTypes}
-          permitsByStatus={stats.permitsByStatus}
-          trendData={stats.trendData}
-          topApplicants={stats.topApplicants}
-        />
+        <div className="animate-slide-in" style={{ animationDelay: '0.4s' }}>
+          <DashboardCharts 
+            topCounties={stats.topCounties}
+            topPermitTypes={stats.topPermitTypes}
+            permitsByStatus={stats.permitsByStatus}
+            trendData={stats.trendData}
+            permitsOverTime={stats.permitsOverTime}
+            topApplicants={stats.topApplicants}
+          />
+        </div>
 
         {/* Quick Actions */}
-        <div className="mt-8">
-          <Card>
+        <div className="mt-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
+          <Card className="glass-effect border-white/40 shadow-xl">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Access key features</CardDescription>
+              <CardTitle className="text-2xl font-bold flex items-center">
+                <span className="mr-2">⚡</span> Quick Actions
+              </CardTitle>
+              <CardDescription className="text-base">Access key features and tools</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/map" className="block">
-                  <Button className="w-full" size="lg">
+                <Link href="/map" className="block group">
+                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
+                    <span className="mr-2 text-2xl">🗺️</span>
                     View Interactive Map
                   </Button>
                 </Link>
-                <Link href="/competitors" className="block">
-                  <Button className="w-full" size="lg" variant="outline">
+                <Link href="/competitors" className="block group">
+                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
+                    <span className="mr-2 text-2xl">👥</span>
                     Competitor Watchlist
                   </Button>
                 </Link>
-                <Link href="/alerts" className="block">
-                  <Button className="w-full" size="lg" variant="outline">
+                <Link href="/alerts" className="block group">
+                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-teal-600 to-blue-500 hover:from-teal-700 hover:to-blue-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
+                    <span className="mr-2 text-2xl">🔔</span>
                     Alert Notifications
                   </Button>
                 </Link>
@@ -226,6 +231,6 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

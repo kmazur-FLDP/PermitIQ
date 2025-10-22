@@ -8,12 +8,13 @@ interface DashboardChartsProps {
   topPermitTypes: { type: string; count: number }[]
   permitsByStatus: { status: string; count: number }[]
   trendData: { month: string; count: number }[]
+  permitsOverTime: { month: string; count: number }[]
   topApplicants: { applicant: string; count: number }[]
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16']
 
-export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, trendData, topApplicants }: DashboardChartsProps) {
+export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, trendData, permitsOverTime, topApplicants }: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Top Counties Bar Chart */}
@@ -92,6 +93,39 @@ export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, 
               <Tooltip />
               <Legend />
             </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Permits Over Time Line Chart - NEW */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Permits Over Time</CardTitle>
+          <CardDescription>Permit volume trend (last 12 months)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={permitsOverTime}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="month" 
+                fontSize={12}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="count" 
+                stroke="#06b6d4" 
+                strokeWidth={3}
+                name="Permits"
+                dot={{ fill: '#06b6d4', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>

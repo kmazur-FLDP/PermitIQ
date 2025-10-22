@@ -147,81 +147,87 @@ export default function AdminClientPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admin data...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center animate-slide-in">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-lg text-slate-600 font-medium">Loading admin data...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        {/* Header */}
+        <div className="mb-8 animate-slide-in">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-500 mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-lg text-slate-600">Manage users and monitor system health</p>
+        </div>
 
         {/* ETL Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 animate-slide-in" style={{ animationDelay: '0s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Last ETL Run</CardDescription>
-              <CardTitle className="text-2xl">
+              <CardDescription className="text-slate-600">Last ETL Run</CardDescription>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
                 {etlStats?.last_run_date 
                   ? new Date(etlStats.last_run_date).toLocaleDateString()
                   : 'Never'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">
-                Status: <span className={etlStats?.last_run_status === 'success' ? 'text-green-600' : 'text-red-600'}>
+              <p className="text-xs text-slate-500">
+                Status: <span className={etlStats?.last_run_status === 'success' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                   {etlStats?.last_run_status || 'Unknown'}
                 </span>
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 animate-slide-in" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Records Updated</CardDescription>
-              <CardTitle className="text-3xl">
+              <CardDescription className="text-slate-600">Records Updated</CardDescription>
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent">
                 {etlStats?.last_records_updated?.toLocaleString() || 0}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">Last run</p>
+              <p className="text-xs text-slate-500">Last run</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 animate-slide-in" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Success Rate (30d)</CardDescription>
-              <CardTitle className="text-3xl">
+              <CardDescription className="text-slate-600">Success Rate (30d)</CardDescription>
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-500 bg-clip-text text-transparent">
                 {etlStats?.success_rate?.toFixed(1) || 0}%
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">{etlStats?.total_runs_this_week || 0} runs this week</p>
+              <p className="text-xs text-slate-500">{etlStats?.total_runs_this_week || 0} runs this week</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 animate-slide-in" style={{ animationDelay: '0.3s' }}>
             <CardHeader className="pb-3">
-              <CardDescription>Avg Duration</CardDescription>
-              <CardTitle className="text-3xl">
+              <CardDescription className="text-slate-600">Avg Duration</CardDescription>
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
                 {etlStats?.avg_duration_seconds?.toFixed(0) || 0}s
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">Last 7 days</p>
+              <p className="text-xs text-slate-500">Last 7 days</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Recent ETL Runs */}
-        <Card className="mb-8">
+        <Card className="mb-8 glass-effect border-white/40 animate-slide-in" style={{ animationDelay: '0.4s' }}>
           <CardHeader>
-            <CardTitle>Recent ETL Runs</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-slate-800">Recent ETL Runs</CardTitle>
             <CardDescription>Last 10 ETL job executions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -263,19 +269,22 @@ export default function AdminClientPage() {
         </Card>
 
         {/* User Management */}
-        <Card>
+        <Card className="glass-effect border-white/40 animate-slide-in" style={{ animationDelay: '0.5s' }}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage user accounts and permissions</CardDescription>
+                <CardTitle className="text-2xl font-semibold text-slate-800">User Management</CardTitle>
+                <CardDescription className="text-slate-600">Manage user accounts and permissions</CardDescription>
               </div>
-              <Button onClick={() => {
-                setNewUser({ email: '', full_name: '', role: 'user' })
+              <Button 
+                onClick={() => {
+                  setNewUser({ email: '', full_name: '', role: 'user' })
                 setEditingUser(null)
                 setIsDialogOpen(true)
-              }}>
-                Add User
+              }}
+              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <span className="mr-2">➕</span> Add User
               </Button>
             </div>
           </CardHeader>
@@ -283,29 +292,29 @@ export default function AdminClientPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Last Login</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow className="border-b border-slate-200">
+                    <TableHead className="font-semibold text-slate-700">Email</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Name</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Role</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Created</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Last Login</TableHead>
+                    <TableHead className="font-semibold text-slate-700">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.full_name || '-'}</TableCell>
+                    <TableRow key={user.id} className="hover:bg-blue-50/50 transition-colors duration-200">
+                      <TableCell className="font-medium text-slate-800">{user.email}</TableCell>
+                      <TableCell className="text-slate-600">{user.full_name || '-'}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          user.role === 'admin' ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700' : 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700'
                         }`}>
                           {user.role}
                         </span>
                       </TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-slate-600">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-slate-600">
                         {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : 'Never'}
                       </TableCell>
                       <TableCell>
@@ -317,15 +326,17 @@ export default function AdminClientPage() {
                               setEditingUser(user)
                               setIsDialogOpen(true)
                             }}
+                            className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-200"
                           >
-                            Edit
+                            ✏️ Edit
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteUser(user.id)}
+                            className="hover:bg-red-600 hover:shadow-lg transition-all duration-200"
                           >
-                            Delete
+                            🗑️ Delete
                           </Button>
                         </div>
                       </TableCell>
