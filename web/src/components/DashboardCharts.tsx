@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 
 interface DashboardChartsProps {
+  topCounties: { county: string; count: number }[]
   topPermitTypes: { type: string; count: number }[]
   permitsByStatus: { status: string; count: number }[]
   trendData: { month: string; count: number }[]
@@ -12,9 +13,34 @@ interface DashboardChartsProps {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16']
 
-export function DashboardCharts({ topPermitTypes, permitsByStatus, trendData, topApplicants }: DashboardChartsProps) {
+export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, trendData, topApplicants }: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Top Counties Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Permits by County</CardTitle>
+          <CardDescription>Top 10 counties with most permits</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={topCounties}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="county" 
+                angle={-45}
+                textAnchor="end"
+                height={100}
+                fontSize={12}
+              />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
       {/* Top Permit Types Bar Chart */}
       <Card>
         <CardHeader>
@@ -34,7 +60,7 @@ export function DashboardCharts({ topPermitTypes, permitsByStatus, trendData, to
               />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#3b82f6" />
+              <Bar dataKey="count" fill="#10b981" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

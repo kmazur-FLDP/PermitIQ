@@ -15,6 +15,19 @@ async function getDashboardStats() {
     .select('*')
     .single()
   
+  // Get top counties using RPC function (bypasses RLS)
+  const { data: countyStats, error: countyError } = await supabase
+    .rpc('get_dashboard_county_stats')
+  
+  if (countyError) {
+    console.error('County Stats Error:', countyError)
+  }
+  
+  const topCounties = (countyStats || []).map((row: { county: string; permit_count: number }) => ({
+    county: row.county,
+    count: row.permit_count
+  }))
+
   // Get top permit types using RPC function (bypasses RLS)
   const { data: permitTypeStats, error: permitTypeError } = await supabase
     .rpc('get_dashboard_permit_type_stats')
@@ -64,13 +77,14 @@ async function getDashboardStats() {
   return {
     totalPermits: overallStats?.total_permits || 0,
     recentPermits: overallStats?.permits_last_30_days || 0,
+    topCounties,
     topPermitTypes,
     permitsByStatus,
     trendData,
     topApplicants,
     avgAcreage: Math.round((overallStats?.avg_acreage || 0) * 100) / 100,
-    topPermitType: topPermitTypes[0]?.type || 'N/A',
-    topPermitTypeCount: topPermitTypes[0]?.count || 0,
+    topCounty: topCounties[0]?.county || 'N/A',
+    topCountyCount: topCounties[0]?.count || 0,
   }
 }
 
@@ -155,11 +169,11 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardDescription>Top Permit Type</CardDescription>
-              <CardTitle className="text-2xl">{stats.topPermitType}</CardTitle>
+              <CardDescription>Top County</CardDescription>
+              <CardTitle className="text-2xl">{stats.topCounty}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-gray-500">{stats.topPermitTypeCount.toLocaleString()} permits</p>
+              <p className="text-xs text-gray-500">{stats.topCountyCount.toLocaleString()} permits</p>
             </CardContent>
           </Card>
 
@@ -176,6 +190,7 @@ export default async function DashboardPage() {
 
         {/* Charts */}
         <DashboardCharts 
+          topCounties={stats.topCounties}
           topPermitTypes={stats.topPermitTypes}
           permitsByStatus={stats.permitsByStatus}
           trendData={stats.trendData}
