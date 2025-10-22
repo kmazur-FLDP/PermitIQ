@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --no-lint",
-    "build:webpack": "TURBOPACK=0 next build --no-lint",
+    "build": "next build",
+    "build:webpack": "TURBOPACK=0 next build",
     "start": "next start",
     "lint": "eslint"
   },
