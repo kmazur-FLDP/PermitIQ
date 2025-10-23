@@ -358,15 +358,275 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
     : filteredPermits
 
   return (
-    <div className="h-full w-full relative">
-      <MapContainer
-        // @ts-expect-error - react-leaflet v5 type definitions issue
-        center={center}
-        zoom={7}
-        style={{ height: '100%', width: '100%' }}
-        className="z-0 rounded-xl"
-        attributionControl={false}
-      >
+    <div className="h-full w-full flex">
+      {/* Sidebar - Map Controls */}
+      <div className="w-80 h-full bg-white border-r border-slate-200 overflow-y-auto flex-shrink-0">
+        <div className="p-6 space-y-6">
+          <div className="sticky top-0 bg-white pb-4 border-b border-slate-200 -mx-6 px-6 mb-4">
+            <h3 className="font-bold text-xl text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
+              🗺️ Map Controls
+            </h3>
+          </div>
+
+          {/* Data Range Toggle */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-2 block">Data Range</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setDataRange('5years')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  dataRange === '5years'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                📅 Last 5 Years
+              </button>
+              <button
+                onClick={() => setDataRange('all')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  dataRange === 'all'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🌍 All Time
+              </button>
+            </div>
+            {dataRange === 'all' && (
+              <p className="text-xs text-amber-600 mt-2">
+                ⚠️ Loading all permits may take longer
+              </p>
+            )}
+            <p className="text-xs text-slate-500 mt-2">
+              Total Available: <span className="font-semibold text-slate-700">{totalAvailable.toLocaleString()}</span> permits
+            </p>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-2 block">View Mode</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setViewMode('markers')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'markers'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                📍 Markers
+              </button>
+              <button
+                onClick={() => setViewMode('heatmap')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'heatmap'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🔥 Heat Map
+              </button>
+            </div>
+          </div>
+
+          {/* Cluster Mode Toggle - Only show in marker mode */}
+          {viewMode === 'markers' && (
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">
+                Cluster Mode
+                <span className="ml-1 text-xs font-normal text-slate-500">(when zoomed out)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setClusterEnabled(true)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    clusterEnabled
+                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                      : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  ⚡ Enabled
+                </button>
+                <button
+                  onClick={() => setClusterEnabled(false)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    !clusterEnabled
+                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                      : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  🔍 Disabled
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Base Map Toggle */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-2 block">Base Map</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setBaseMap('street')}
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                  baseMap === 'street'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🗺️ Street
+              </button>
+              <button
+                onClick={() => setBaseMap('satellite')}
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                  baseMap === 'satellite'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🛰️ Satellite
+              </button>
+              <button
+                onClick={() => setBaseMap('terrain')}
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                  baseMap === 'terrain'
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                ⛰️ Terrain
+              </button>
+            </div>
+          </div>
+
+          {/* Time-Lapse Toggle */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-2 block">Time-Lapse Animation</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  if (!timelapseRange) {
+                    // Initialize timelapse if not already done
+                    setCurrentDate(new Date())
+                  } else {
+                    setCurrentDate(timelapseRange.max)
+                  }
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  currentDate !== null
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                ⏱️ Enabled
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentDate(null)
+                  setIsPlaying(false)
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  currentDate === null
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🚫 Disabled
+              </button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-1 block">Date Range</label>
+            <select 
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as DateRange)}
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+            >
+              <option value="all">All Time</option>
+              <option value="30">Last 30 Days</option>
+              <option value="60">Last 60 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last Year</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-1 block">County</label>
+            <select 
+              value={selectedCounty}
+              onChange={(e) => setSelectedCounty(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+            >
+              <option value="all">All Counties</option>
+              {counties.map(county => (
+                <option key={county} value={county}>{county}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-1 block">Permit Type</label>
+            <select 
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+            >
+              <option value="all">All Types</option>
+              {permitTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-1 block">Acreage Range</label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={minAcreage}
+                onChange={(e) => setMinAcreage(e.target.value)}
+                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={maxAcreage}
+                onChange={(e) => setMaxAcreage(e.target.value)}
+                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              />
+            </div>
+          </div>
+
+          <Button 
+            onClick={() => {
+              setSelectedCounty('all')
+              setSelectedType('all')
+              setDateRange('all')
+              setMinAcreage('')
+              setMaxAcreage('')
+            }}
+            variant="outline"
+            className="w-full"
+          >
+            Clear Filters
+          </Button>
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="flex-1 h-full relative">
+        <MapContainer
+          // @ts-expect-error - react-leaflet v5 type definitions issue
+          center={center}
+          zoom={7}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+          attributionControl={false}
+        >
         <TileLayer
           // @ts-expect-error - react-leaflet v5 type definitions issue
           attribution={getTileLayerConfig(baseMap).attribution}
@@ -567,290 +827,6 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         )}
       </MapContainer>
       
-      {/* Filter Controls - Bottom Left */}
-      <Card className="absolute bottom-4 left-4 glass-effect border-white/40 p-4 z-1000 min-w-[300px] animate-slide-in shadow-xl">
-        <h3 className="font-bold text-lg mb-3 text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
-          🗺️ Map Controls
-        </h3>
-        
-        {/* Data Range Toggle */}
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <label className="text-xs font-semibold text-slate-700 mb-2 block">Data Range</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setDataRange('5years')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                dataRange === '5years'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              📅 Last 5 Years
-            </button>
-            <button
-              onClick={() => setDataRange('all')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                dataRange === 'all'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              🌍 All Time
-            </button>
-          </div>
-          {totalAvailable > 0 && (
-            <p className="text-[10px] text-slate-500 mt-2 text-center">
-              {permits.length.toLocaleString()} of {totalAvailable.toLocaleString()} permits loaded
-            </p>
-          )}
-        </div>
-        
-        {/* View Mode Toggle */}
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <label className="text-xs font-semibold text-slate-700 mb-2 block">View Mode</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setViewMode('markers')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                viewMode === 'markers'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              📍 Markers
-            </button>
-            <button
-              onClick={() => setViewMode('heatmap')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                viewMode === 'heatmap'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              🔥 Heat Map
-            </button>
-          </div>
-        </div>
-
-        {/* Cluster Mode Toggle - Only show in marker mode */}
-        {viewMode === 'markers' && (
-          <div className="mb-4 pb-4 border-b border-slate-200">
-            <label className="text-xs font-semibold text-slate-700 mb-2 block">
-              Cluster Mode
-              <span className="ml-1 text-xs font-normal text-slate-500">(when zoomed out)</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setClusterEnabled(true)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  clusterEnabled
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                ⚡ Enabled
-              </button>
-              <button
-                onClick={() => setClusterEnabled(false)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  !clusterEnabled
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                🔍 Disabled
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Base Map Toggle */}
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <label className="text-xs font-semibold text-slate-700 mb-2 block">Base Map</label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setBaseMap('street')}
-              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                baseMap === 'street'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              🗺️ Street
-            </button>
-            <button
-              onClick={() => setBaseMap('satellite')}
-              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                baseMap === 'satellite'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              🛰️ Satellite
-            </button>
-            <button
-              onClick={() => setBaseMap('terrain')}
-              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                baseMap === 'terrain'
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              ⛰️ Terrain
-            </button>
-          </div>
-        </div>
-        
-        {/* Time-Lapse Toggle */}
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <label className="text-xs font-semibold text-slate-700 mb-2 block">Time-Lapse Animation</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                if (!timelapseRange) {
-                  // Initialize timelapse if not already done
-                  setCurrentDate(new Date())
-                } else {
-                  setCurrentDate(timelapseRange.max)
-                }
-              }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                currentDate !== null
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              ⏱️ Enabled
-            </button>
-            <button
-              onClick={() => {
-                setCurrentDate(null)
-                setIsPlaying(false)
-              }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                currentDate === null
-                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              🚫 Disabled
-            </button>
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-700 mb-1 block">Date Range</label>
-            <select 
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as DateRange)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-            >
-              <option value="all">All Time</option>
-              <option value="30">Last 30 Days</option>
-              <option value="60">Last 60 Days</option>
-              <option value="90">Last 90 Days</option>
-              <option value="180">Last 6 Months</option>
-              <option value="365">Last Year</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="text-xs font-semibold text-slate-700 mb-1 block">County</label>
-            <select 
-              value={selectedCounty}
-              onChange={(e) => setSelectedCounty(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-            >
-              <option value="all">All Counties ({permits.length})</option>
-              {counties.map(county => (
-                <option key={county} value={county}>
-                  {county} ({permits.filter(p => p.county === county).length})
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="text-xs font-semibold text-slate-700 mb-1 block">Permit Type</label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-            >
-              <option value="all">All Types</option>
-              {permitTypes.map(type => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="text-xs font-semibold text-slate-700 mb-1 block">Acreage Range</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={minAcreage}
-                  onChange={(e) => setMinAcreage(e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                  min="0"
-                  step="0.1"
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={maxAcreage}
-                  onChange={(e) => setMaxAcreage(e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                  min="0"
-                  step="0.1"
-                />
-              </div>
-            </div>
-            {(() => {
-              const permitsWithAcreage = permits.filter(p => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const acreageValue = (p as any).acreage || p.total_acreage
-                return acreageValue && acreageValue > 0
-              }).length
-              
-              return permitsWithAcreage === 0 ? (
-                <p className="text-[10px] text-amber-600 mt-1 font-medium">
-                  ⚠️ No permits have acreage data in this dataset
-                </p>
-              ) : (
-                <p className="text-[10px] text-slate-500 mt-1">
-                  {permitsWithAcreage.toLocaleString()} permits have acreage data
-                </p>
-              )
-            })()}
-          </div>
-          
-          {(selectedCounty !== 'all' || selectedType !== 'all' || dateRange !== 'all' || minAcreage !== '' || maxAcreage !== '') && (
-            <Button 
-              onClick={() => {
-                setSelectedCounty('all')
-                setSelectedType('all')
-                setDateRange('all')
-                setMinAcreage('')
-                setMaxAcreage('')
-              }}
-              variant="outline"
-              size="sm"
-              className="w-full text-xs"
-            >
-              Clear All Filters
-            </Button>
-          )}
-        </div>
-      </Card>
-      
       {/* Time-Lapse Controls - Top Center - Only show when time-lapse is enabled */}
       {timelapseRange && currentDate !== null && (
         <Card className="absolute top-4 left-1/2 transform -translate-x-1/2 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in min-w-[500px]" style={{ animationDelay: '0.15s' }}>
@@ -977,6 +953,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
           )}
         </div>
       </Card>
+      </div>
     </div>
   )
 }
