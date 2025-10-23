@@ -51,6 +51,25 @@ interface PermitMapProps {
   initialPermits?: Permit[]
 }
 
+// Helper function to get tile layer configuration based on map type
+function getTileLayerConfig(baseMapType: BaseMapType) {
+  const configs = {
+    street: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    },
+    terrain: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    }
+  }
+  return configs[baseMapType]
+}
+
 // Helper function to parse geometry from GeoJSON and convert to Leaflet coordinate format
 function parseGeometry(geometryJson: Json | null | undefined): [number, number][] | [number, number][][] | null {
   if (!geometryJson) return null
@@ -81,6 +100,7 @@ function parseGeometry(geometryJson: Json | null | undefined): [number, number][
 type ViewMode = 'markers' | 'heatmap'
 type DateRange = 'all' | '30' | '60' | '90' | '180' | '365'
 type DataRange = '5years' | 'all'
+type BaseMapType = 'street' | 'satellite' | 'terrain'
 
 export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [permits, setPermits] = useState<Permit[]>(initialPermits)
@@ -92,6 +112,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [dateRange, setDateRange] = useState<DateRange>('all')
   const [dataRange, setDataRange] = useState<DataRange>('5years')
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
+  const [baseMap, setBaseMap] = useState<BaseMapType>('street')
   const [counties, setCounties] = useState<string[]>([])
   const [permitTypes, setPermitTypes] = useState<string[]>([])
   const [totalAvailable, setTotalAvailable] = useState<number>(0)
@@ -282,8 +303,9 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
       >
         <TileLayer
           // @ts-expect-error - react-leaflet v5 type definitions issue
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={getTileLayerConfig(baseMap).attribution}
+          url={getTileLayerConfig(baseMap).url}
+          key={baseMap}
         />
         
         <ZoomHandler onZoomChange={setCurrentZoom} />
@@ -428,6 +450,43 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
               }`}
             >
               🔥 Heat Map
+            </button>
+          </div>
+        </div>
+
+        {/* Base Map Toggle */}
+        <div className="mb-4 pb-4 border-b border-slate-200">
+          <label className="text-xs font-semibold text-slate-700 mb-2 block">Base Map</label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setBaseMap('street')}
+              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                baseMap === 'street'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              🗺️ Street
+            </button>
+            <button
+              onClick={() => setBaseMap('satellite')}
+              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                baseMap === 'satellite'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              🛰️ Satellite
+            </button>
+            <button
+              onClick={() => setBaseMap('terrain')}
+              className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                baseMap === 'terrain'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              ⛰️ Terrain
             </button>
           </div>
         </div>
