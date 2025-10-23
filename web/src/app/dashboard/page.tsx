@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { DashboardCharts } from '@/components/DashboardCharts'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { PermitStatusWidget } from '@/components/PermitStatusWidget'
+import { YearOverYearWidget } from '@/components/YearOverYearWidget'
+import { ExpiringPermitsWidget } from '@/components/ExpiringPermitsWidget'
+import { AcreageLeaderboard } from '@/components/AcreageLeaderboard'
 
 async function getDashboardStats() {
   const supabase = await createClient()
@@ -90,6 +94,71 @@ async function getDashboardStats() {
     count: row.permit_count
   }))
   
+  // Get permit status breakdown using RPC function
+  const { data: statusBreakdown, error: statusBreakdownError } = await supabase
+    .rpc('get_permit_status_breakdown')
+  
+  if (statusBreakdownError) {
+    console.error('Status Breakdown Error:', statusBreakdownError)
+  }
+  
+  const permitStatusData = (statusBreakdown || []).map((row: { status_category: string; permit_count: number; percentage: number }) => ({
+    status_category: row.status_category,
+    permit_count: row.permit_count,
+    percentage: row.percentage
+  }))
+  
+  // Get year-over-year comparison using RPC function
+  const { data: yoyComparison, error: yoyError } = await supabase
+    .rpc('get_year_over_year_comparison')
+  
+  if (yoyError) {
+    console.error('Year-over-Year Comparison Error:', yoyError)
+  }
+  
+  const yoyData = (yoyComparison || []).map((row: { metric: string; current_year_value: number; previous_year_value: number; change_count: number; change_percentage: number }) => ({
+    metric: row.metric,
+    current_year_value: row.current_year_value,
+    previous_year_value: row.previous_year_value,
+    change_count: row.change_count,
+    change_percentage: row.change_percentage
+  }))
+  
+  // Get expiring permits summary using RPC function
+  const { data: expiringPermits, error: expiringError } = await supabase
+    .rpc('get_expiring_permits_summary')
+  
+  if (expiringError) {
+    console.error('Expiring Permits Error:', expiringError)
+  }
+  
+  const expiringData = (expiringPermits || []).map((row: { time_period: string; days_range: string; permit_count: number; total_acreage: number }) => ({
+    time_period: row.time_period,
+    days_range: row.days_range,
+    permit_count: row.permit_count,
+    total_acreage: row.total_acreage
+  }))
+  
+  // Get acreage leaderboard using RPC function
+  const { data: leaderboard, error: leaderboardError } = await supabase
+    .rpc('get_acreage_leaderboard')
+  
+  if (leaderboardError) {
+    console.error('Acreage Leaderboard Error:', leaderboardError)
+  }
+  
+  const leaderboardData = (leaderboard || []).map((row: { rank: number; permit_number: string; applicant_name: string; project_name: string; county: string; permit_type: string; acreage: number; issue_date: string; permit_status: string }) => ({
+    rank: row.rank,
+    permit_number: row.permit_number,
+    applicant_name: row.applicant_name,
+    project_name: row.project_name,
+    county: row.county,
+    permit_type: row.permit_type,
+    acreage: row.acreage,
+    issue_date: row.issue_date,
+    permit_status: row.permit_status
+  }))
+  
   return {
     totalPermits: overallStats?.total_permits || 0,
     recentPermits: overallStats?.permits_last_30_days || 0,
@@ -102,6 +171,12 @@ async function getDashboardStats() {
     avgAcreage: Math.round((overallStats?.avg_acreage || 0) * 100) / 100,
     topCounty: topCounties[0]?.county || 'N/A',
     topCountyCount: topCounties[0]?.count || 0,
+    permitStatusData,
+    yoyData,
+    expiringData,
+    leaderboardData,
+    counties: topCounties.map(c => c.county),
+    permitTypes: topPermitTypes.map(t => t.type),
   }
 }
 
@@ -187,6 +262,19 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
+        {/* Permit Status and Year-over-Year Comparison - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Permit Status Widget */}
+          <div className="animate-slide-in" style={{ animationDelay: '0.35s' }}>
+            <PermitStatusWidget statusData={stats.permitStatusData} />
+          </div>
+
+          {/* Year-over-Year Comparison Widget */}
+          <div className="animate-slide-in" style={{ animationDelay: '0.38s' }}>
+            <YearOverYearWidget yoyData={stats.yoyData} currentYear={2025} previousYear={2024} />
+          </div>
+        </div>
+
         {/* Charts */}
         <div className="animate-slide-in" style={{ animationDelay: '0.4s' }}>
           <DashboardCharts 
@@ -196,6 +284,15 @@ export default async function DashboardPage() {
             trendData={stats.trendData}
             permitsOverTime={stats.permitsOverTime}
             topApplicants={stats.topApplicants}
+          />
+        </div>
+
+        {/* Acreage Leaderboard - Below Charts */}
+        <div className="mt-8 animate-slide-in" style={{ animationDelay: '0.45s' }}>
+          <AcreageLeaderboard 
+            leaderboardData={stats.leaderboardData}
+            counties={stats.counties}
+            permitTypes={stats.permitTypes}
           />
         </div>
 
