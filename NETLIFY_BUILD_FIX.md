@@ -52,6 +52,21 @@ This command:
 
 ## Why This Works
 
+### .npmrc file
+The `.npmrc` file in the web directory sets npm configuration that applies to all npm commands in that directory. Setting `legacy-peer-deps=true` means:
+- All npm operations use legacy peer dependency resolution
+- No need to remember to add `--legacy-peer-deps` flag
+- Works consistently in local development and CI/CD environments
+
+### Cache clearing
+The build command explicitly:
+1. **Removes node_modules:** `rm -rf node_modules`
+2. **Clears npm cache:** `npm cache clean --force`
+3. **Fresh install:** `npm install --legacy-peer-deps`
+
+This ensures Netlify doesn't use cached modules that were installed with the old configuration.
+
+### Why the flag is needed
 The `--legacy-peer-deps` flag tells npm to:
 1. Ignore peer dependency conflicts
 2. Use the legacy peer dependency resolution algorithm (npm v6 behavior)
@@ -64,11 +79,29 @@ This is safe in our case because:
 
 ---
 
-## File Changed
+## Files Changed
 
-**File:** `netlify.toml`
+### 1. web/.npmrc (NEW)
+**Purpose:** Configure npm to always use legacy peer dependency resolution
+
+**Content:**
+```
+legacy-peer-deps=true
+```
+
+### 2. netlify.toml
 **Line:** 9
-**Change:** Added `--legacy-peer-deps` flag to npm install command
+**Change:** Updated build command to clear cache and use fresh install
+
+**From:**
+```toml
+command = "npm install && npm run build"
+```
+
+**To:**
+```toml
+command = "rm -rf node_modules && npm cache clean --force && npm install --legacy-peer-deps && npm run build"
+```
 
 ---
 
@@ -124,10 +157,15 @@ Monitor these resources:
 
 ## Summary
 
-✅ **Quick Fix:** Added `--legacy-peer-deps` to Netlify build command
-✅ **Safe:** Works correctly in local testing
-✅ **Simple:** One-line change to configuration file
-✅ **Effective:** Resolves peer dependency conflict
+✅ **Created .npmrc file** - Ensures consistent npm behavior across all environments
+✅ **Updated build command** - Clears cache and forces fresh install
+✅ **Safe solution** - Works correctly in local testing
+✅ **Effective fix** - Resolves both peer dependency conflict AND cache issues
 
-The Netlify build should now succeed! 🚀
+### Important Note
+After pushing these changes, you may need to:
+1. **Clear Netlify's build cache** manually in the Netlify dashboard (Site Settings > Build & Deploy > Clear cache and retry deploy)
+2. OR wait for the `rm -rf node_modules && npm cache clean --force` in the build command to clear it
+
+The build should succeed after the cache is cleared! 🚀
 

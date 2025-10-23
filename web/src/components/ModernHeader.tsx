@@ -38,7 +38,7 @@ export function ModernHeader({ userEmail, userRole, onSignOut }: ModernHeaderPro
               </div>
               <div>
                 <div className="text-2xl font-semibold text-slate-900">PermitIQ</div>
-                <div className="text-sm text-slate-500 hidden sm:block">Environmental Permit Intelligence</div>
+                <div className="text-sm text-slate-500 hidden sm:block">SWFWMD ERP Permit Intelligence</div>
               </div>
             </Link>
           </div>
