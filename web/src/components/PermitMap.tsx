@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import type { Permit } from '@/types'
+import type { Json } from '@/types/database'
 import '@/lib/leaflet-config' // Fix marker icons
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -19,6 +20,10 @@ const TileLayer = dynamic(
 )
 const CircleMarker = dynamic(
   () => import('react-leaflet').then((mod) => mod.CircleMarker),
+  { ssr: false }
+)
+const Polygon = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Polygon),
   { ssr: false }
 )
 const Popup = dynamic(
@@ -37,8 +42,40 @@ const HeatmapLayer = dynamic(
   { ssr: false }
 )
 
+const ZoomHandler = dynamic(
+  () => import('@/components/ZoomHandler').then((mod) => mod.ZoomHandler),
+  { ssr: false }
+)
+
 interface PermitMapProps {
   initialPermits?: Permit[]
+}
+
+// Helper function to parse geometry from GeoJSON and convert to Leaflet coordinate format
+function parseGeometry(geometryJson: Json | null | undefined): [number, number][] | [number, number][][] | null {
+  if (!geometryJson) return null
+  
+  try {
+    const geom = typeof geometryJson === 'string' ? JSON.parse(geometryJson) : geometryJson
+    
+    if (!geom || !geom.coordinates) return null
+    
+    // Handle different geometry types
+    if (geom.type === 'Polygon') {
+      // Polygon coordinates are [[[lng, lat], ...]]
+      // Leaflet expects [[lat, lng], ...]
+      return geom.coordinates[0].map(([lng, lat]: [number, number]) => [lat, lng])
+    } else if (geom.type === 'MultiPolygon') {
+      // MultiPolygon coordinates are [[[[lng, lat], ...]], ...]
+      // Return the first polygon for simplicity
+      return geom.coordinates[0][0].map(([lng, lat]: [number, number]) => [lat, lng])
+    }
+    
+    return null
+  } catch (e) {
+    console.error('Error parsing geometry:', e)
+    return null
+  }
 }
 
 type ViewMode = 'markers' | 'heatmap'
@@ -58,6 +95,9 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [counties, setCounties] = useState<string[]>([])
   const [permitTypes, setPermitTypes] = useState<string[]>([])
   const [totalAvailable, setTotalAvailable] = useState<number>(0)
+  const [minAcreage, setMinAcreage] = useState<string>('')
+  const [maxAcreage, setMaxAcreage] = useState<string>('')
+  const [currentZoom, setCurrentZoom] = useState<number>(7)
 
   useEffect(() => {
     const loadPermits = async () => {
@@ -184,8 +224,26 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
       })
     }
     
+    // Filter by acreage range
+    if (minAcreage !== '' || maxAcreage !== '') {
+      const min = minAcreage !== '' ? parseFloat(minAcreage) : 0
+      const max = maxAcreage !== '' ? parseFloat(maxAcreage) : Infinity
+      
+      filtered = filtered.filter(p => {
+        // Check both 'acreage' and 'total_acreage' fields (database schema mismatch)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const acreageValue = (p as any).acreage || p.total_acreage
+        
+        // Skip permits without acreage data
+        if (!acreageValue || acreageValue === null || acreageValue === 0) {
+          return false
+        }
+        return acreageValue >= min && acreageValue <= max
+      })
+    }
+    
     setFilteredPermits(filtered)
-  }, [permits, selectedCounty, selectedType, dateRange])
+  }, [permits, selectedCounty, selectedType, dateRange, minAcreage, maxAcreage])
 
   if (loading) {
     return (
@@ -228,6 +286,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
+        <ZoomHandler onZoomChange={setCurrentZoom} />
         <MapController permits={filteredPermits} />
         
         {viewMode === 'heatmap' ? (
@@ -236,6 +295,57 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
           filteredPermits.map((permit) => {
             if (!permit.latitude || !permit.longitude) return null
             
+            // Show polygons when zoomed in (>= zoom level 11), otherwise show dots
+            const shouldShowPolygon = currentZoom >= 11
+            const geometry = shouldShowPolygon ? parseGeometry(permit.geometry) : null
+            
+            // Prepare popup content
+            const popupContent = (
+              <Popup>
+                <div className="min-w-[280px] p-2">
+                  <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
+                    {permit.permit_number}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
+                    <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
+                    {permit.project_name && (
+                      <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
+                    )}
+                    {permit.permit_type && (
+                      <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
+                    )}
+                    {permit.permit_status && (
+                      <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
+                    )}
+                    {(permit.total_acreage || (permit as any).acreage) && (
+                      <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{((permit as any).acreage || permit.total_acreage)?.toLocaleString()}</span></p>
+                    )}
+                  </div>
+                </div>
+              </Popup>
+            )
+            
+            // Render polygon if zoomed in and geometry exists, otherwise render circle marker
+            if (shouldShowPolygon && geometry) {
+              return (
+                <Polygon
+                  key={permit.id}
+                  positions={geometry as any}
+                  pathOptions={{
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.5,
+                    color: '#dc2626',
+                    weight: 2,
+                    opacity: 0.8
+                  }}
+                >
+                  {popupContent}
+                </Polygon>
+              )
+            }
+            
+            // Default to circle marker
             return (
               <CircleMarker
                 key={permit.id}
@@ -250,37 +360,15 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {...({ radius: 6 } as any)}
               >
-                <Popup>
-                  <div className="min-w-[280px] p-2">
-                    <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
-                      {permit.permit_number}
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
-                      <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
-                      {permit.project_name && (
-                        <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
-                      )}
-                      {permit.permit_type && (
-                        <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
-                      )}
-                      {permit.permit_status && (
-                        <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
-                      )}
-                      {permit.total_acreage && (
-                        <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{permit.total_acreage.toLocaleString()}</span></p>
-                      )}
-                    </div>
-                  </div>
-                </Popup>
+                {popupContent}
               </CircleMarker>
             )
           })
         )}
       </MapContainer>
       
-      {/* Filter Controls - Top Left */}
-      <Card className="absolute top-4 left-4 glass-effect border-white/40 p-4 z-1000 min-w-[300px] animate-slide-in shadow-xl">
+      {/* Filter Controls - Bottom Left */}
+      <Card className="absolute bottom-4 left-4 glass-effect border-white/40 p-4 z-1000 min-w-[300px] animate-slide-in shadow-xl">
         <h3 className="font-bold text-lg mb-3 text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
           🗺️ Map Controls
         </h3>
@@ -393,12 +481,59 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             </select>
           </div>
           
-          {(selectedCounty !== 'all' || selectedType !== 'all' || dateRange !== 'all') && (
+          <div>
+            <label className="text-xs font-semibold text-slate-700 mb-1 block">Acreage Range</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={minAcreage}
+                  onChange={(e) => setMinAcreage(e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={maxAcreage}
+                  onChange={(e) => setMaxAcreage(e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            </div>
+            {(() => {
+              const permitsWithAcreage = permits.filter(p => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const acreageValue = (p as any).acreage || p.total_acreage
+                return acreageValue && acreageValue > 0
+              }).length
+              
+              return permitsWithAcreage === 0 ? (
+                <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                  ⚠️ No permits have acreage data in this dataset
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-500 mt-1">
+                  {permitsWithAcreage.toLocaleString()} permits have acreage data
+                </p>
+              )
+            })()}
+          </div>
+          
+          {(selectedCounty !== 'all' || selectedType !== 'all' || dateRange !== 'all' || minAcreage !== '' || maxAcreage !== '') && (
             <Button 
               onClick={() => {
                 setSelectedCounty('all')
                 setSelectedType('all')
                 setDateRange('all')
+                setMinAcreage('')
+                setMaxAcreage('')
               }}
               variant="outline"
               size="sm"
@@ -410,8 +545,8 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         </div>
       </Card>
       
-      {/* Stats overlay - Bottom Left */}
-      <Card className="absolute bottom-4 left-4 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in" style={{ animationDelay: '0.1s' }}>
+      {/* Stats overlay - Top Right */}
+      <Card className="absolute top-4 right-4 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
           <div className="text-3xl">📍</div>
           <div>

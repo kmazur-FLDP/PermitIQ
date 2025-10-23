@@ -101,7 +101,7 @@ export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, 
       <Card>
         <CardHeader>
           <CardTitle>Permits Over Time</CardTitle>
-          <CardDescription>Permit volume trend (last 12 months)</CardDescription>
+          <CardDescription>Permit volume trend (last 2 years)</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -134,7 +134,7 @@ export function DashboardCharts({ topCounties, topPermitTypes, permitsByStatus, 
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Permit Issuance Trend</CardTitle>
-          <CardDescription>Monthly permit activity over the last 12 months</CardDescription>
+          <CardDescription>Monthly permit activity for current year (2025)</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

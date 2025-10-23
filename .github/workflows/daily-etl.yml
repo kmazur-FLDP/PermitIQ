@@ -2,9 +2,9 @@ name: PermitIQ Daily ETL
 # Automated data collection from SWFWMD at 7 AM EST daily
 
 on:
-  # Run daily at 7 AM EST (12:00 UTC in non-DST, 11:00 UTC in DST)
+  # Run daily at 7 AM EDT/EST (11:00 UTC during DST, 12:00 UTC during standard time)
   schedule:
-    - cron: '0 12 * * *'  # 7 AM EST (adjust for DST if needed)
+    - cron: '0 11 * * *'  # 7 AM EDT (current DST schedule)
   
   # Allow manual trigger
   workflow_dispatch:

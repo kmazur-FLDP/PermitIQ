@@ -52,12 +52,14 @@ async function getDashboardStats() {
     count: row.permit_count
   })) || []
   
-  // Get monthly trends (last 12 months) - original trend data
+  // Get monthly trends for current year (2025) - Permit Issuance Trend
+  const currentYear = new Date().getFullYear()
   const { data: monthlyStats } = await supabase
     .from('dashboard_monthly_trends')
     .select('month, permit_count')
+    .gte('month', `${currentYear}-01-01`)
+    .lte('month', `${currentYear}-12-31`)
     .order('month', { ascending: true })
-    .limit(12)
   
   const trendData = (monthlyStats || []).map((row: { month: string; permit_count: number }) => ({
     month: new Date(row.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
