@@ -8,8 +8,8 @@
   # Build command - clear cache and use legacy-peer-deps for react-leaflet-cluster compatibility
   command = "rm -rf node_modules && npm cache clean --force && npm install --legacy-peer-deps && npm run build"
   
-  # Publish directory - handled by Next.js plugin
-  publish = ".next"
+  # Publish directory - let the Next.js plugin handle this automatically
+  # publish = ".next"  # Commented out - plugin manages this
 
 # Use Netlify's Next.js plugin for full Next.js features
 [[plugins]]
