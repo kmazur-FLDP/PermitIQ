@@ -34,6 +34,7 @@ export function ModernHeader({ userEmail, userRole, onSignOut }: ModernHeaderPro
                   sizes="96px"
                   className="object-contain"
                   priority
+                  unoptimized
                 />
               </div>
               <div>
