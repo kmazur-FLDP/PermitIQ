@@ -47,6 +47,12 @@ const ZoomHandler = dynamic(
   { ssr: false }
 )
 
+const MarkerClusterGroup = dynamic(
+  // @ts-expect-error - react-leaflet-cluster doesn't have proper TypeScript definitions
+  () => import('react-leaflet-cluster'),
+  { ssr: false }
+)
+
 interface PermitMapProps {
   initialPermits?: Permit[]
 }
@@ -113,12 +119,19 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   const [dataRange, setDataRange] = useState<DataRange>('5years')
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const [baseMap, setBaseMap] = useState<BaseMapType>('street')
+  const [clusterEnabled, setClusterEnabled] = useState<boolean>(true)
   const [counties, setCounties] = useState<string[]>([])
   const [permitTypes, setPermitTypes] = useState<string[]>([])
   const [totalAvailable, setTotalAvailable] = useState<number>(0)
   const [minAcreage, setMinAcreage] = useState<string>('')
   const [maxAcreage, setMaxAcreage] = useState<string>('')
   const [currentZoom, setCurrentZoom] = useState<number>(7)
+  
+  // Time-lapse animation state
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
+  const [timelapseSpeed, setTimelapseSpeed] = useState<number>(1)
+  const [currentDate, setCurrentDate] = useState<Date | null>(null)
+  const [timelapseRange, setTimelapseRange] = useState<{ min: Date; max: Date } | null>(null)
 
   useEffect(() => {
     const loadPermits = async () => {
@@ -266,6 +279,51 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
     setFilteredPermits(filtered)
   }, [permits, selectedCounty, selectedType, dateRange, minAcreage, maxAcreage])
 
+  // Calculate date range for time-lapse when permits change (but don't enable by default)
+  useEffect(() => {
+    if (permits.length === 0) {
+      setTimelapseRange(null)
+      // Don't reset currentDate here - let user control enablement
+      return
+    }
+    
+    const permitDates = permits
+      .filter(p => p.issue_date)
+      .map(p => new Date(p.issue_date!))
+      .sort((a, b) => a.getTime() - b.getTime())
+    
+    if (permitDates.length > 0) {
+      const minDate = permitDates[0]
+      const maxDate = permitDates[permitDates.length - 1]
+      setTimelapseRange({ min: minDate, max: maxDate })
+      // Don't set currentDate here - time-lapse disabled by default
+    }
+  }, [permits])
+
+  // Animation playback logic
+  useEffect(() => {
+    if (!isPlaying || !timelapseRange || !currentDate) return
+    
+    const dayIncrement = timelapseSpeed * 30 // Each tick adds days (scaled by speed)
+    const interval = setInterval(() => {
+      setCurrentDate(prev => {
+        if (!prev || !timelapseRange) return prev
+        
+        const nextDate = new Date(prev)
+        nextDate.setDate(nextDate.getDate() + dayIncrement)
+        
+        // Loop back to start if we reach the end
+        if (nextDate > timelapseRange.max) {
+          return timelapseRange.min
+        }
+        
+        return nextDate
+      })
+    }, 100) // Update every 100ms for smooth animation
+    
+    return () => clearInterval(interval)
+  }, [isPlaying, timelapseSpeed, timelapseRange, currentDate])
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -290,6 +348,14 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
 
   // Center of Florida
   const center: [number, number] = [28.5, -82.0]
+  
+  // Apply time-lapse filter if currentDate is set
+  const displayedPermits = currentDate 
+    ? filteredPermits.filter(p => {
+        if (!p.issue_date) return false
+        return new Date(p.issue_date) <= currentDate
+      })
+    : filteredPermits
 
   return (
     <div className="h-full w-full relative">
@@ -309,47 +375,46 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         />
         
         <ZoomHandler onZoomChange={setCurrentZoom} />
-        <MapController permits={filteredPermits} />
+        <MapController permits={displayedPermits} />
         
         {viewMode === 'heatmap' ? (
-          <HeatmapLayer permits={filteredPermits} />
+          <HeatmapLayer permits={displayedPermits} />
         ) : (
-          filteredPermits.map((permit) => {
-            if (!permit.latitude || !permit.longitude) return null
-            
-            // Show polygons when zoomed in (>= zoom level 11), otherwise show dots
-            const shouldShowPolygon = currentZoom >= 11
-            const geometry = shouldShowPolygon ? parseGeometry(permit.geometry) : null
-            
-            // Prepare popup content
-            const popupContent = (
-              <Popup>
-                <div className="min-w-[280px] p-2">
-                  <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
-                    {permit.permit_number}
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
-                    <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
-                    {permit.project_name && (
-                      <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
-                    )}
-                    {permit.permit_type && (
-                      <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
-                    )}
-                    {permit.permit_status && (
-                      <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
-                    )}
-                    {(permit.total_acreage || (permit as any).acreage) && (
-                      <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{((permit as any).acreage || permit.total_acreage)?.toLocaleString()}</span></p>
-                    )}
+          <>
+            {/* Render polygons outside cluster group when zoomed in */}
+            {currentZoom >= 11 && displayedPermits.map((permit) => {
+              if (!permit.latitude || !permit.longitude) return null
+              
+              const geometry = parseGeometry(permit.geometry)
+              if (!geometry) return null
+              
+              // Prepare popup content
+              const popupContent = (
+                <Popup>
+                  <div className="min-w-[280px] p-2">
+                    <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
+                      {permit.permit_number}
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
+                      <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
+                      {permit.project_name && (
+                        <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
+                      )}
+                      {permit.permit_type && (
+                        <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
+                      )}
+                      {permit.permit_status && (
+                        <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
+                      )}
+                      {(permit.total_acreage || (permit as any).acreage) && (
+                        <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{((permit as any).acreage || permit.total_acreage)?.toLocaleString()}</span></p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            )
-            
-            // Render polygon if zoomed in and geometry exists, otherwise render circle marker
-            if (shouldShowPolygon && geometry) {
+                </Popup>
+              )
+              
               return (
                 <Polygon
                   key={permit.id}
@@ -365,27 +430,140 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                   {popupContent}
                 </Polygon>
               )
-            }
+            })}
             
-            // Default to circle marker
-            return (
-              <CircleMarker
-                key={permit.id}
-                center={[permit.latitude, permit.longitude]}
-                pathOptions={{
-                  fillColor: '#ef4444',
-                  fillOpacity: 0.7,
-                  color: '#dc2626',
-                  weight: 2,
-                  opacity: 0.9
+            {/* Render clustered circle markers when zoomed out (if clustering enabled) */}
+            {currentZoom < 11 && clusterEnabled && (
+              <MarkerClusterGroup
+                chunkedLoading
+                showCoverageOnHover={false}
+                // @ts-expect-error - react-leaflet-cluster type definitions are incomplete
+                iconCreateFunction={(cluster) => {
+                  const count = cluster.getChildCount()
+                  let size = 'small'
+                  let bgColor = 'bg-blue-500'
+                  
+                  if (count > 100) {
+                    size = 'large'
+                    bgColor = 'bg-red-500'
+                  } else if (count > 50) {
+                    size = 'medium'
+                    bgColor = 'bg-orange-500'
+                  }
+                  
+                  const sizeClass = size === 'large' ? 'w-14 h-14 text-xl' : 
+                                   size === 'medium' ? 'w-12 h-12 text-lg' : 
+                                   'w-10 h-10 text-sm'
+                  
+                  // @ts-expect-error - Leaflet divIcon type
+                  return window.L?.divIcon({
+                    html: `<div class="flex items-center justify-center ${sizeClass} ${bgColor} text-white font-bold rounded-full shadow-lg border-4 border-white">${count}</div>`,
+                    className: 'custom-cluster-icon',
+                    iconSize: [40, 40]
+                  })
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                {...({ radius: 6 } as any)}
               >
-                {popupContent}
-              </CircleMarker>
-            )
-          })
+                {displayedPermits.map((permit) => {
+                  if (!permit.latitude || !permit.longitude) return null
+                  
+                  // Prepare popup content
+                  const popupContent = (
+                    <Popup>
+                      <div className="min-w-[280px] p-2">
+                        <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
+                          {permit.permit_number}
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
+                          <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
+                          {permit.project_name && (
+                            <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
+                          )}
+                          {permit.permit_type && (
+                            <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
+                          )}
+                          {permit.permit_status && (
+                            <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
+                          )}
+                          {(permit.total_acreage || (permit as any).acreage) && (
+                            <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{((permit as any).acreage || permit.total_acreage)?.toLocaleString()}</span></p>
+                          )}
+                        </div>
+                      </div>
+                    </Popup>
+                  )
+                  
+                  return (
+                    <CircleMarker
+                      key={permit.id}
+                      center={[permit.latitude, permit.longitude]}
+                      pathOptions={{
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.7,
+                        color: '#dc2626',
+                        weight: 2,
+                        opacity: 0.9
+                      }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      {...({ radius: 6 } as any)}
+                    >
+                      {popupContent}
+                    </CircleMarker>
+                  )
+                })}
+              </MarkerClusterGroup>
+            )}
+            
+            {/* Render individual circle markers when clustering is disabled */}
+            {currentZoom < 11 && !clusterEnabled && displayedPermits.map((permit) => {
+              if (!permit.latitude || !permit.longitude) return null
+              
+              // Prepare popup content
+              const popupContent = (
+                <Popup>
+                  <div className="min-w-[280px] p-2">
+                    <h3 className="font-bold text-base mb-3 text-blue-600 border-b pb-2">
+                      {permit.permit_number}
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><strong className="text-slate-700">County:</strong> <span className="text-slate-600">{permit.county}</span></p>
+                      <p><strong className="text-slate-700">Applicant:</strong> <span className="text-slate-600">{permit.applicant_name}</span></p>
+                      {permit.project_name && (
+                        <p><strong className="text-slate-700">Project:</strong> <span className="text-slate-600">{permit.project_name}</span></p>
+                      )}
+                      {permit.permit_type && (
+                        <p><strong className="text-slate-700">Type:</strong> <span className="text-slate-600">{permit.permit_type}</span></p>
+                      )}
+                      {permit.permit_status && (
+                        <p><strong className="text-slate-700">Status:</strong> <span className={`font-semibold ${permit.permit_status.toLowerCase().includes('active') ? 'text-green-600' : 'text-slate-600'}`}>{permit.permit_status}</span></p>
+                      )}
+                      {(permit.total_acreage || (permit as any).acreage) && (
+                        <p><strong className="text-slate-700">Acres:</strong> <span className="text-slate-600">{((permit as any).acreage || permit.total_acreage)?.toLocaleString()}</span></p>
+                      )}
+                    </div>
+                  </div>
+                </Popup>
+              )
+              
+              return (
+                <CircleMarker
+                  key={permit.id}
+                  center={[permit.latitude, permit.longitude]}
+                  pathOptions={{
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.7,
+                    color: '#dc2626',
+                    weight: 2,
+                    opacity: 0.9
+                  }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  {...({ radius: 6 } as any)}
+                >
+                  {popupContent}
+                </CircleMarker>
+              )
+            })}
+          </>
         )}
       </MapContainer>
       
@@ -454,6 +632,38 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
           </div>
         </div>
 
+        {/* Cluster Mode Toggle - Only show in marker mode */}
+        {viewMode === 'markers' && (
+          <div className="mb-4 pb-4 border-b border-slate-200">
+            <label className="text-xs font-semibold text-slate-700 mb-2 block">
+              Cluster Mode
+              <span className="ml-1 text-xs font-normal text-slate-500">(when zoomed out)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setClusterEnabled(true)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  clusterEnabled
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                ⚡ Enabled
+              </button>
+              <button
+                onClick={() => setClusterEnabled(false)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  !clusterEnabled
+                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                🔍 Disabled
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Base Map Toggle */}
         <div className="mb-4 pb-4 border-b border-slate-200">
           <label className="text-xs font-semibold text-slate-700 mb-2 block">Base Map</label>
@@ -487,6 +697,43 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
               }`}
             >
               ⛰️ Terrain
+            </button>
+          </div>
+        </div>
+        
+        {/* Time-Lapse Toggle */}
+        <div className="mb-4 pb-4 border-b border-slate-200">
+          <label className="text-xs font-semibold text-slate-700 mb-2 block">Time-Lapse Animation</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                if (!timelapseRange) {
+                  // Initialize timelapse if not already done
+                  setCurrentDate(new Date())
+                } else {
+                  setCurrentDate(timelapseRange.max)
+                }
+              }}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                currentDate !== null
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              ⏱️ Enabled
+            </button>
+            <button
+              onClick={() => {
+                setCurrentDate(null)
+                setIsPlaying(false)
+              }}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                currentDate === null
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                  : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              🚫 Disabled
             </button>
           </div>
         </div>
@@ -604,6 +851,82 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         </div>
       </Card>
       
+      {/* Time-Lapse Controls - Top Center - Only show when time-lapse is enabled */}
+      {timelapseRange && currentDate !== null && (
+        <Card className="absolute top-4 left-1/2 transform -translate-x-1/2 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in min-w-[500px]" style={{ animationDelay: '0.15s' }}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
+                ⏱️ Time-Lapse Animation
+              </h3>
+              <span className="text-xs text-slate-600">
+                {currentDate ? currentDate.toLocaleDateString() : 'N/A'}
+              </span>
+            </div>
+            
+            {/* Timeline Slider */}
+            <div className="relative">
+              <input
+                type="range"
+                min={timelapseRange.min.getTime()}
+                max={timelapseRange.max.getTime()}
+                value={currentDate?.getTime() || timelapseRange.max.getTime()}
+                onChange={(e) => {
+                  setCurrentDate(new Date(parseInt(e.target.value)))
+                  setIsPlaying(false) // Pause when manually adjusting
+                }}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+              <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <span>{timelapseRange.min.toLocaleDateString()}</span>
+                <span>{timelapseRange.max.toLocaleDateString()}</span>
+              </div>
+            </div>
+            
+            {/* Playback Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg hover:shadow-xl"
+              >
+                {isPlaying ? '⏸️ Pause' : '▶️ Play'}
+              </button>
+              
+              <button
+                onClick={() => setCurrentDate(timelapseRange.min)}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                ⏮️ Reset
+              </button>
+              
+              {/* Speed Controls */}
+              <div className="flex-1 flex items-center gap-2 ml-4">
+                <span className="text-xs text-slate-600 font-medium">Speed:</span>
+                {[1, 2, 5, 10].map(speed => (
+                  <button
+                    key={speed}
+                    onClick={() => setTimelapseSpeed(speed)}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                      timelapseSpeed === speed
+                        ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Stats */}
+            <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-200">
+              <span>Showing {displayedPermits.length.toLocaleString()} of {filteredPermits.length.toLocaleString()} permits</span>
+              <span>{((displayedPermits.length / filteredPermits.length) * 100).toFixed(1)}% of timeline</span>
+            </div>
+          </div>
+        </Card>
+      )}
+      
       {/* Stats overlay - Top Right */}
       <Card className="absolute top-4 right-4 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
@@ -611,7 +934,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
           <div>
             <p className="text-xs text-slate-600 font-medium">Showing Permits</p>
             <p className="text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-              {filteredPermits.length.toLocaleString()}
+              {displayedPermits.length.toLocaleString()}
             </p>
           </div>
         </div>
