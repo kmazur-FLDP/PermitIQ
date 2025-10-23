@@ -48,7 +48,6 @@ const ZoomHandler = dynamic(
 )
 
 const MarkerClusterGroup = dynamic(
-  // @ts-expect-error - react-leaflet-cluster doesn't have proper TypeScript definitions
   () => import('react-leaflet-cluster'),
   { ssr: false }
 )
@@ -338,7 +337,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   if (error) {
     return (
       <div className="h-full w-full flex items-center justify-center">
-        <div className="glass-effect p-8 rounded-xl text-center animate-slide-in">
+        <div className="bg-white border border-slate-200 shadow-sm p-8 rounded-xl text-center">
           <p className="text-2xl font-bold text-red-600 mb-2">⚠️ Error</p>
           <p className="text-slate-600">{error}</p>
         </div>
@@ -360,11 +359,11 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
   return (
     <div className="h-full w-full flex">
       {/* Sidebar - Map Controls */}
-      <div className="w-80 h-full bg-white border-r border-slate-200 overflow-y-auto flex-shrink-0">
+      <div className="w-80 h-full bg-slate-50 border-r border-slate-200 overflow-y-auto flex-shrink-0">
         <div className="p-6 space-y-6">
-          <div className="sticky top-0 bg-white pb-4 border-b border-slate-200 -mx-6 px-6 mb-4">
-            <h3 className="font-bold text-xl text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
-              🗺️ Map Controls
+          <div className="sticky top-0 bg-slate-50 pb-4 border-b border-slate-200 -mx-6 px-6 mb-4">
+            <h3 className="font-bold text-xl text-slate-900">
+              Map Controls
             </h3>
           </div>
 
@@ -374,23 +373,23 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setDataRange('5years')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   dataRange === '5years'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                📅 Last 5 Years
+                Last 5 Years
               </button>
               <button
                 onClick={() => setDataRange('all')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   dataRange === 'all'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                🌍 All Time
+                All Time
               </button>
             </div>
             {dataRange === 'all' && (
@@ -409,23 +408,23 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setViewMode('markers')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   viewMode === 'markers'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                📍 Markers
+                Markers
               </button>
               <button
                 onClick={() => setViewMode('heatmap')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   viewMode === 'heatmap'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                🔥 Heat Map
+                Heat Map
               </button>
             </div>
           </div>
@@ -440,23 +439,23 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setClusterEnabled(true)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     clusterEnabled
-                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  ⚡ Enabled
+                  Enabled
                 </button>
                 <button
                   onClick={() => setClusterEnabled(false)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     !clusterEnabled
-                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  🔍 Disabled
+                  Disabled
                 </button>
               </div>
             </div>
@@ -468,33 +467,33 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setBaseMap('street')}
-                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
                   baseMap === 'street'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                🗺️ Street
+                Street
               </button>
               <button
                 onClick={() => setBaseMap('satellite')}
-                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
                   baseMap === 'satellite'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                🛰️ Satellite
+                Satellite
               </button>
               <button
                 onClick={() => setBaseMap('terrain')}
-                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
                   baseMap === 'terrain'
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                ⛰️ Terrain
+                Terrain
               </button>
             </div>
           </div>
@@ -512,26 +511,26 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                     setCurrentDate(timelapseRange.max)
                   }
                 }}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   currentDate !== null
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                ⏱️ Enabled
+                Enabled
               </button>
               <button
                 onClick={() => {
                   setCurrentDate(null)
                   setIsPlaying(false)
                 }}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   currentDate === null
-                    ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                🚫 Disabled
+                Disabled
               </button>
             </div>
           </div>
@@ -542,7 +541,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <select 
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as DateRange)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="all">All Time</option>
               <option value="30">Last 30 Days</option>
@@ -558,7 +557,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <select 
               value={selectedCounty}
               onChange={(e) => setSelectedCounty(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="all">All Counties</option>
               {counties.map(county => (
@@ -572,7 +571,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <select 
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="all">All Types</option>
               {permitTypes.map(type => (
@@ -589,14 +588,14 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                 placeholder="Min"
                 value={minAcreage}
                 onChange={(e) => setMinAcreage(e.target.value)}
-                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               />
               <input
                 type="number"
                 placeholder="Max"
                 value={maxAcreage}
                 onChange={(e) => setMaxAcreage(e.target.value)}
-                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               />
             </div>
           </div>
@@ -697,8 +696,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
               <MarkerClusterGroup
                 chunkedLoading
                 showCoverageOnHover={false}
-                // @ts-expect-error - react-leaflet-cluster type definitions are incomplete
-                iconCreateFunction={(cluster) => {
+                iconCreateFunction={(cluster: any) => {
                   const count = cluster.getChildCount()
                   let size = 'small'
                   let bgColor = 'bg-blue-500'
@@ -715,8 +713,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                                    size === 'medium' ? 'w-12 h-12 text-lg' : 
                                    'w-10 h-10 text-sm'
                   
-                  // @ts-expect-error - Leaflet divIcon type
-                  return window.L?.divIcon({
+                  return (window.L?.divIcon as any)({
                     html: `<div class="flex items-center justify-center ${sizeClass} ${bgColor} text-white font-bold rounded-full shadow-lg border-4 border-white">${count}</div>`,
                     className: 'custom-cluster-icon',
                     iconSize: [40, 40]
@@ -829,11 +826,11 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
       
       {/* Time-Lapse Controls - Top Center - Only show when time-lapse is enabled */}
       {timelapseRange && currentDate !== null && (
-        <Card className="absolute top-4 left-1/2 transform -translate-x-1/2 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in min-w-[500px]" style={{ animationDelay: '0.15s' }}>
+        <Card className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white border border-slate-200 shadow-sm p-4 z-1000 min-w-[500px]">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-cyan-500">
-                ⏱️ Time-Lapse Animation
+              <h3 className="font-bold text-sm text-slate-900">
+                Time-Lapse Animation
               </h3>
               <span className="text-xs text-slate-600">
                 {currentDate ? currentDate.toLocaleDateString() : 'N/A'}
@@ -849,7 +846,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
                 value={currentDate?.getTime() || timelapseRange.max.getTime()}
                 onChange={(e) => {
                   setCurrentDate(new Date(parseInt(e.target.value)))
-                  setIsPlaying(false) // Pause when manually adjusting
+                  setIsPlaying(false)
                 }}
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
@@ -863,7 +860,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-lg hover:shadow-xl"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
               >
                 {isPlaying ? '⏸️ Pause' : '▶️ Play'}
               </button>
@@ -904,12 +901,12 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
       )}
       
       {/* Stats overlay - Top Right */}
-      <Card className="absolute top-4 right-4 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in" style={{ animationDelay: '0.1s' }}>
+      <Card className="absolute top-4 right-4 bg-white border border-slate-200 shadow-sm p-4 z-1000">
         <div className="flex items-center gap-3">
           <div className="text-3xl">📍</div>
           <div>
             <p className="text-xs text-slate-600 font-medium">Showing Permits</p>
-            <p className="text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            <p className="text-2xl font-bold text-slate-900">
               {displayedPermits.length.toLocaleString()}
             </p>
           </div>
@@ -917,7 +914,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
       </Card>
       
       {/* Legend - Bottom Right */}
-      <Card className="absolute bottom-4 right-4 glass-effect border-white/40 p-4 z-1000 shadow-xl animate-slide-in" style={{ animationDelay: '0.2s' }}>
+      <Card className="absolute bottom-4 right-4 bg-white border border-slate-200 shadow-sm p-4 z-1000">
         <h4 className="text-xs font-semibold text-slate-700 mb-2">Legend</h4>
         <div className="space-y-1 text-xs text-slate-600">
           {viewMode === 'markers' ? (

@@ -35,10 +35,10 @@ export function PermitStatusWidget({ statusData }: PermitStatusWidgetProps) {
   const totalPermits = statusData.reduce((sum, item) => sum + item.permit_count, 0)
 
   return (
-    <Card className="glass-effect border-white/40 shadow-xl">
+    <Card className="bg-white border border-slate-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center">
-          <span className="mr-2">📊</span> Permit Status Breakdown
+        <CardTitle className="text-xl font-bold text-slate-900">
+          Permit Status Breakdown
         </CardTitle>
         <CardDescription>Current status of all permits in system</CardDescription>
       </CardHeader>
@@ -55,7 +55,7 @@ export function PermitStatusWidget({ statusData }: PermitStatusWidgetProps) {
                 className="block group"
               >
                 <div
-                  className={`${colors.bg} ${colors.border} border-2 rounded-lg p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+                  className={`${colors.bg} ${colors.border} border-2 rounded-lg p-4 transition-all hover:shadow-sm cursor-pointer`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export function PermitStatusWidget({ statusData }: PermitStatusWidgetProps) {
         <div className="mt-4 pt-4 border-t border-slate-200">
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold text-slate-700">Total Permits</span>
-            <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold text-slate-900">
               {totalPermits.toLocaleString()}
             </span>
           </div>

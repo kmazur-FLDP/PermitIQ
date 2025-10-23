@@ -25,10 +25,10 @@ export function ExpiringPermitsWidget({ expiringData }: ExpiringPermitsWidgetPro
   const totalAcreage = expiringData.reduce((sum, item) => sum + item.total_acreage, 0)
 
   return (
-    <Card className="glass-effect border-white/40 shadow-xl">
+    <Card className="bg-white border border-slate-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center">
-          <span className="mr-2">⏰</span> Expiring Permits Alert
+        <CardTitle className="text-xl font-bold text-slate-900">
+          Expiring Permits Alert
         </CardTitle>
         <CardDescription>
           Track permits approaching expiration for renewal opportunities
@@ -68,7 +68,7 @@ export function ExpiringPermitsWidget({ expiringData }: ExpiringPermitsWidgetPro
                 className="block group"
               >
                 <div
-                  className={`${colors.bg} ${colors.border} border-2 rounded-lg p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+                  className={`${colors.bg} ${colors.border} border-2 rounded-lg p-4 transition-all hover:shadow-sm cursor-pointer`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">

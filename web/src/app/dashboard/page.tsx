@@ -194,8 +194,8 @@ export default async function DashboardPage() {
     <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
-        <div className="mb-8 animate-slide-in">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-500 mb-2">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
             Dashboard
           </h1>
           <p className="text-lg text-slate-600">
@@ -205,12 +205,12 @@ export default async function DashboardPage() {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in">
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-600 font-semibold flex items-center">
-                <span className="mr-2">📊</span> Total Permits
+              <CardDescription className="text-blue-600 font-semibold">
+                Total Permits
               </CardDescription>
-              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              <CardTitle className="text-4xl font-bold text-slate-900">
                 {stats.totalPermits.toLocaleString()}
               </CardTitle>
             </CardHeader>
@@ -219,12 +219,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.1s' }}>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <CardDescription className="text-teal-600 font-semibold flex items-center">
-                <span className="mr-2">📅</span> Last 30 Days
+              <CardDescription className="text-green-600 font-semibold">
+                Last 30 Days
               </CardDescription>
-              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent">
+              <CardTitle className="text-4xl font-bold text-slate-900">
                 {stats.recentPermits.toLocaleString()}
               </CardTitle>
             </CardHeader>
@@ -233,12 +233,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.2s' }}>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <CardDescription className="text-cyan-600 font-semibold flex items-center">
-                <span className="mr-2">🏆</span> Top County
+              <CardDescription className="text-cyan-600 font-semibold">
+                Top County
               </CardDescription>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-500 bg-clip-text text-transparent">
+              <CardTitle className="text-2xl font-bold text-slate-900">
                 {stats.topCounty}
               </CardTitle>
             </CardHeader>
@@ -247,12 +247,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-white/40 hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-slide-in" style={{ animationDelay: '0.3s' }}>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-600 font-semibold flex items-center">
-                <span className="mr-2">📏</span> Avg. Acreage
+              <CardDescription className="text-blue-600 font-semibold">
+                Avg. Acreage
               </CardDescription>
-              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
+              <CardTitle className="text-4xl font-bold text-slate-900">
                 {stats.avgAcreage.toFixed(1)}
               </CardTitle>
             </CardHeader>
@@ -265,18 +265,18 @@ export default async function DashboardPage() {
         {/* Permit Status and Year-over-Year Comparison - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Permit Status Widget */}
-          <div className="animate-slide-in" style={{ animationDelay: '0.35s' }}>
+          <div>
             <PermitStatusWidget statusData={stats.permitStatusData} />
           </div>
 
           {/* Year-over-Year Comparison Widget */}
-          <div className="animate-slide-in" style={{ animationDelay: '0.38s' }}>
+          <div>
             <YearOverYearWidget yoyData={stats.yoyData} currentYear={2025} previousYear={2024} />
           </div>
         </div>
 
         {/* Charts */}
-        <div className="animate-slide-in" style={{ animationDelay: '0.4s' }}>
+        <div>
           <DashboardCharts 
             topCounties={stats.topCounties}
             topPermitTypes={stats.topPermitTypes}
@@ -288,7 +288,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Acreage Leaderboard - Below Charts */}
-        <div className="mt-8 animate-slide-in" style={{ animationDelay: '0.45s' }}>
+        <div className="mt-8">
           <AcreageLeaderboard 
             leaderboardData={stats.leaderboardData}
             counties={stats.counties}
@@ -297,31 +297,28 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
-          <Card className="glass-effect border-white/40 shadow-xl">
+        <div className="mt-8">
+          <Card className="bg-white border border-slate-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold flex items-center">
-                <span className="mr-2">⚡</span> Quick Actions
+              <CardTitle className="text-2xl font-bold text-slate-900">
+                Quick Actions
               </CardTitle>
               <CardDescription className="text-base">Access key features and tools</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/map" className="block group">
-                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                    <span className="mr-2 text-2xl">🗺️</span>
+                <Link href="/map" className="block">
+                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
                     View Interactive Map
                   </Button>
                 </Link>
-                <Link href="/competitors" className="block group">
-                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                    <span className="mr-2 text-2xl">👥</span>
+                <Link href="/competitors" className="block">
+                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
                     Competitor Watchlist
                   </Button>
                 </Link>
-                <Link href="/alerts" className="block group">
-                  <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-teal-600 to-blue-500 hover:from-teal-700 hover:to-blue-600 shadow-lg hover:shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                    <span className="mr-2 text-2xl">🔔</span>
+                <Link href="/alerts" className="block">
+                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
                     Alert Notifications
                   </Button>
                 </Link>

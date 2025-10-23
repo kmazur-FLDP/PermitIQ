@@ -45,10 +45,10 @@ export function YearOverYearWidget({ yoyData, currentYear = 2025, previousYear =
   }
 
   return (
-    <Card className="glass-effect border-white/40 shadow-xl">
+    <Card className="bg-white border border-slate-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center">
-          <span className="mr-2">📊</span> Year-over-Year Comparison
+        <CardTitle className="text-xl font-bold text-slate-900">
+          Year-over-Year Comparison
         </CardTitle>
         <CardDescription>
           {currentYear} vs {previousYear} Performance
@@ -57,7 +57,7 @@ export function YearOverYearWidget({ yoyData, currentYear = 2025, previousYear =
       <CardContent>
         <div className="space-y-4">
           {yoyData.map((item) => (
-            <div key={item.metric} className="border-2 border-slate-200 rounded-lg p-4 hover:shadow-md transition-all">
+            <div key={item.metric} className="border-2 border-slate-200 rounded-lg p-4 hover:shadow-sm transition-all">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-slate-700">{item.metric}</h3>
                 <div className={`${getChangeBg(item.change_percentage)} border-2 rounded-full px-3 py-1 flex items-center gap-2`}>

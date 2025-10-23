@@ -41,17 +41,17 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
   }
 
   const getMedalColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300'
-    if (rank === 2) return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300'
-    if (rank === 3) return 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-300'
+    if (rank === 1) return 'bg-yellow-50 border-yellow-300'
+    if (rank === 2) return 'bg-gray-50 border-gray-300'
+    if (rank === 3) return 'bg-orange-50 border-orange-300'
     return 'bg-white border-slate-200'
   }
 
   return (
-    <Card className="glass-effect border-white/40 shadow-xl">
+    <Card className="bg-white border border-slate-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center">
-          <span className="mr-2">🏆</span> Acreage Leaderboard
+        <CardTitle className="text-xl font-bold text-slate-900">
+          Acreage Leaderboard
         </CardTitle>
         <CardDescription>
           Top 10 largest permits by acreage this year (2025)
@@ -122,7 +122,7 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
               className="block group"
             >
               <div
-                className={`${getMedalColor(entry.rank)} border-2 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer`}
+                className={`${getMedalColor(entry.rank)} border-2 rounded-lg p-4 transition-all hover:shadow-sm cursor-pointer`}
               >
                 <div className="flex items-start justify-between">
                   {/* Left side - Rank and Details */}
