@@ -5,8 +5,8 @@
   # Base directory for the build
   base = "web"
   
-  # Build command - use npm install instead of ci (lockfile is gitignored)
-  command = "npm install && npm run build"
+  # Build command - use npm install with legacy-peer-deps for react-leaflet-cluster compatibility
+  command = "npm install --legacy-peer-deps && npm run build"
   
   # Publish directory - handled by Next.js plugin
   publish = ".next"
