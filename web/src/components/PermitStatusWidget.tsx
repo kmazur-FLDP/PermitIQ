@@ -35,15 +35,15 @@ export function PermitStatusWidget({ statusData }: PermitStatusWidgetProps) {
   const totalPermits = statusData.reduce((sum, item) => sum + item.permit_count, 0)
 
   return (
-    <Card className="bg-white border border-slate-200 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-slate-900">
+    <Card className="bg-white border border-slate-200 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="border-b border-slate-100 pb-4">
+        <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
           Permit Status Breakdown
         </CardTitle>
-        <CardDescription>Current status of all permits in system</CardDescription>
+        <CardDescription className="text-slate-600 mt-1">Current status of all permits in system</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+      <CardContent className="pt-6">
+        <div className="space-y-4">
           {statusData.map((status) => {
             const colors = statusColors[status.status_category] || statusColors.Other
             const icon = statusIcons[status.status_category] || statusIcons.Other
@@ -55,25 +55,25 @@ export function PermitStatusWidget({ statusData }: PermitStatusWidgetProps) {
                 className="block group"
               >
                 <div
-                  className={`${colors.bg} ${colors.border} border-2 rounded-lg p-4 transition-all hover:shadow-sm cursor-pointer`}
+                  className={`${colors.bg} ${colors.border} border-2 rounded-xl p-5 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{icon}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{icon}</span>
                       <div>
-                        <p className={`${colors.text} font-semibold text-sm`}>
+                        <p className={`${colors.text} font-bold text-base tracking-wide`}>
                           {status.status_category}
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
                           Click to view on map
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`${colors.text} text-2xl font-bold`}>
+                      <p className={`${colors.text} text-3xl font-bold tracking-tight`}>
                         {status.permit_count.toLocaleString()}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1 font-semibold">
                         {status.percentage}% of total
                       </p>
                     </div>

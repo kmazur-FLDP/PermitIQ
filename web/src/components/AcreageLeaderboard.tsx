@@ -41,35 +41,35 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
   }
 
   const getMedalColor = (rank: number) => {
-    if (rank === 1) return 'bg-yellow-50 border-yellow-300'
-    if (rank === 2) return 'bg-gray-50 border-gray-300'
-    if (rank === 3) return 'bg-orange-50 border-orange-300'
+    if (rank === 1) return 'bg-yellow-50 border-yellow-400 shadow-md'
+    if (rank === 2) return 'bg-gray-50 border-gray-400 shadow-md'
+    if (rank === 3) return 'bg-orange-50 border-orange-400 shadow-md'
     return 'bg-white border-slate-200'
   }
 
   return (
-    <Card className="bg-white border border-slate-200 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-slate-900">
+    <Card className="bg-white border border-slate-200 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="border-b border-slate-100 pb-4">
+        <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
           Acreage Leaderboard
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-600 mt-1">
           Top 10 largest permits by acreage this year (2025)
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {/* Filters */}
-        <div className="mb-6 p-4 bg-slate-50 rounded-lg border-2 border-slate-200">
+        <div className="mb-6 p-5 bg-slate-50 rounded-xl border-2 border-slate-200 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* County Filter */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 mb-2 block">
+              <label className="text-xs font-bold text-slate-700 mb-2 block uppercase tracking-wider">
                 Filter by County
               </label>
               <select
                 value={selectedCounty}
                 onChange={(e) => setSelectedCounty(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
               >
                 <option value="all">All Counties</option>
                 {counties.map((county) => (
@@ -82,13 +82,13 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
 
             {/* Permit Type Filter */}
             <div>
-              <label className="text-xs font-semibold text-slate-700 mb-2 block">
+              <label className="text-xs font-bold text-slate-700 mb-2 block uppercase tracking-wider">
                 Filter by Permit Type
               </label>
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
               >
                 <option value="all">All Types</option>
                 {permitTypes.map((type) => (
@@ -106,15 +106,15 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
                 setSelectedCounty('all')
                 setSelectedType('all')
               }}
-              className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+              className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
-              Clear Filters
+              Clear All Filters
             </button>
           )}
         </div>
 
         {/* Leaderboard */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filteredData.map((entry) => (
             <Link
               key={entry.permit_number}
@@ -122,12 +122,12 @@ export function AcreageLeaderboard({ leaderboardData, counties, permitTypes }: A
               className="block group"
             >
               <div
-                className={`${getMedalColor(entry.rank)} border-2 rounded-lg p-4 transition-all hover:shadow-sm cursor-pointer`}
+                className={`${getMedalColor(entry.rank)} border-2 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer`}
               >
                 <div className="flex items-start justify-between">
                   {/* Left side - Rank and Details */}
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="text-center min-w-[60px]">
+                    <div className="text-center min-w-[70px]">
                       <div className="text-3xl font-bold mb-1">
                         {getMedalIcon(entry.rank)}
                       </div>

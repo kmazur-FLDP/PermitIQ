@@ -2,13 +2,10 @@ import { getUser, getUserProfile } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import { DashboardCharts } from '@/components/DashboardCharts'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { PermitStatusWidget } from '@/components/PermitStatusWidget'
 import { YearOverYearWidget } from '@/components/YearOverYearWidget'
-import { ExpiringPermitsWidget } from '@/components/ExpiringPermitsWidget'
 import { AcreageLeaderboard } from '@/components/AcreageLeaderboard'
 
 async function getDashboardStats() {
@@ -124,21 +121,6 @@ async function getDashboardStats() {
     change_percentage: row.change_percentage
   }))
   
-  // Get expiring permits summary using RPC function
-  const { data: expiringPermits, error: expiringError } = await supabase
-    .rpc('get_expiring_permits_summary')
-  
-  if (expiringError) {
-    console.error('Expiring Permits Error:', expiringError)
-  }
-  
-  const expiringData = (expiringPermits || []).map((row: { time_period: string; days_range: string; permit_count: number; total_acreage: number }) => ({
-    time_period: row.time_period,
-    days_range: row.days_range,
-    permit_count: row.permit_count,
-    total_acreage: row.total_acreage
-  }))
-  
   // Get acreage leaderboard using RPC function
   const { data: leaderboard, error: leaderboardError } = await supabase
     .rpc('get_acreage_leaderboard')
@@ -173,7 +155,6 @@ async function getDashboardStats() {
     topCountyCount: topCounties[0]?.count || 0,
     permitStatusData,
     yoyData,
-    expiringData,
     leaderboardData,
     counties: topCounties.map(c => c.county),
     permitTypes: topPermitTypes.map(t => t.type),
@@ -194,23 +175,26 @@ export default async function DashboardPage() {
     <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Dashboard
-          </h1>
-          <p className="text-lg text-slate-600">
+        <div className="mb-10">
+          <div className="relative">
+            <h1 className="text-5xl font-bold text-slate-900 mb-3 tracking-tight">
+              Dashboard
+            </h1>
+            <div className="absolute bottom-0 left-0 w-20 h-1 bg-gradient-to-r from-blue-600 to-cyan-500"></div>
+          </div>
+          <p className="text-lg text-slate-600 mt-4">
             Environmental permit intelligence and analytics
           </p>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <Card className="bg-white border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:border-blue-300">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-600 font-semibold">
+              <CardDescription className="text-blue-600 font-semibold uppercase text-xs tracking-wider">
                 Total Permits
               </CardDescription>
-              <CardTitle className="text-4xl font-bold text-slate-900">
+              <CardTitle className="text-4xl font-bold text-slate-900 mt-2">
                 {stats.totalPermits.toLocaleString()}
               </CardTitle>
             </CardHeader>
@@ -219,12 +203,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:border-green-300">
             <CardHeader className="pb-3">
-              <CardDescription className="text-green-600 font-semibold">
+              <CardDescription className="text-green-600 font-semibold uppercase text-xs tracking-wider">
                 Last 30 Days
               </CardDescription>
-              <CardTitle className="text-4xl font-bold text-slate-900">
+              <CardTitle className="text-4xl font-bold text-slate-900 mt-2">
                 {stats.recentPermits.toLocaleString()}
               </CardTitle>
             </CardHeader>
@@ -233,12 +217,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:border-cyan-300">
             <CardHeader className="pb-3">
-              <CardDescription className="text-cyan-600 font-semibold">
+              <CardDescription className="text-cyan-600 font-semibold uppercase text-xs tracking-wider">
                 Top County
               </CardDescription>
-              <CardTitle className="text-2xl font-bold text-slate-900">
+              <CardTitle className="text-2xl font-bold text-slate-900 mt-2">
                 {stats.topCounty}
               </CardTitle>
             </CardHeader>
@@ -247,12 +231,12 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:border-purple-300">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-600 font-semibold">
+              <CardDescription className="text-purple-600 font-semibold uppercase text-xs tracking-wider">
                 Avg. Acreage
               </CardDescription>
-              <CardTitle className="text-4xl font-bold text-slate-900">
+              <CardTitle className="text-4xl font-bold text-slate-900 mt-2">
                 {stats.avgAcreage.toFixed(1)}
               </CardTitle>
             </CardHeader>
@@ -263,7 +247,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Permit Status and Year-over-Year Comparison - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           {/* Permit Status Widget */}
           <div>
             <PermitStatusWidget statusData={stats.permitStatusData} />
@@ -276,7 +260,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Charts */}
-        <div>
+        <div className="mb-10">
           <DashboardCharts 
             topCounties={stats.topCounties}
             topPermitTypes={stats.topPermitTypes}
@@ -288,43 +272,12 @@ export default async function DashboardPage() {
         </div>
 
         {/* Acreage Leaderboard - Below Charts */}
-        <div className="mt-8">
+        <div className="mt-10">
           <AcreageLeaderboard 
             leaderboardData={stats.leaderboardData}
             counties={stats.counties}
             permitTypes={stats.permitTypes}
           />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8">
-          <Card className="bg-white border border-slate-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-slate-900">
-                Quick Actions
-              </CardTitle>
-              <CardDescription className="text-base">Access key features and tools</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/map" className="block">
-                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
-                    View Interactive Map
-                  </Button>
-                </Link>
-                <Link href="/competitors" className="block">
-                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
-                    Competitor Watchlist
-                  </Button>
-                </Link>
-                <Link href="/alerts" className="block">
-                  <Button className="w-full h-16 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all">
-                    Alert Notifications
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </DashboardLayout>

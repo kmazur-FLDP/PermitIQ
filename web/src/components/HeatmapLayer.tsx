@@ -26,15 +26,18 @@ declare global {
   }
 }
 
+type DateRange = 'all' | '30' | '60' | '90' | '180' | '365'
+
 interface HeatmapLayerProps {
   permits: Permit[]
+  dateRange?: DateRange
 }
 
 interface CustomLayer {
   options?: { isHeatLayer?: boolean }
 }
 
-export default function HeatmapLayer({ permits }: HeatmapLayerProps) {
+export default function HeatmapLayer({ permits, dateRange = 'all' }: HeatmapLayerProps) {
   const map = useMap()
 
   useEffect(() => {
@@ -44,10 +47,24 @@ export default function HeatmapLayer({ permits }: HeatmapLayerProps) {
     import('leaflet.heat').then(() => {
       const L = window.L
       
+      // Calculate dynamic intensity based on dataset size and date range
+      // Shorter date ranges = fewer permits = need higher intensity to be visible
+      const getIntensityMultiplier = (range: DateRange, permitCount: number): number => {
+        // Base intensity increases for smaller datasets
+        if (range === '30') return permitCount < 100 ? 8.0 : permitCount < 500 ? 5.0 : 3.0
+        if (range === '60') return permitCount < 200 ? 6.0 : permitCount < 1000 ? 4.0 : 2.5
+        if (range === '90') return permitCount < 300 ? 5.0 : permitCount < 1500 ? 3.5 : 2.0
+        if (range === '180') return permitCount < 500 ? 4.0 : permitCount < 2000 ? 3.0 : 1.8
+        if (range === '365') return permitCount < 1000 ? 3.0 : permitCount < 3000 ? 2.0 : 1.5
+        return 1.0 // 'all' time or 5 years - use default
+      }
+      
+      const intensityMultiplier = getIntensityMultiplier(dateRange, permits.length)
+      
       // Create heat map data points [lat, lng, intensity]
       const heatData = permits
         .filter(p => p.latitude && p.longitude)
-        .map(p => [p.latitude!, p.longitude!, 0.5] as [number, number, number])
+        .map(p => [p.latitude!, p.longitude!, 0.5 * intensityMultiplier] as [number, number, number])
 
       // Remove existing heat layer if any
       map.eachLayer((layer: CustomLayer) => {
@@ -83,7 +100,7 @@ export default function HeatmapLayer({ permits }: HeatmapLayerProps) {
         }
       })
     }
-  }, [map, permits])
+  }, [map, permits, dateRange])
 
   return null
 }

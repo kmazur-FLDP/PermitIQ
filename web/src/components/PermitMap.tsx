@@ -637,7 +637,7 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
         <MapController permits={displayedPermits} />
         
         {viewMode === 'heatmap' ? (
-          <HeatmapLayer permits={displayedPermits} />
+          <HeatmapLayer permits={displayedPermits} dateRange={dateRange} />
         ) : (
           <>
             {/* Render polygons outside cluster group when zoomed in */}

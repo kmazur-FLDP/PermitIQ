@@ -45,24 +45,24 @@ export function YearOverYearWidget({ yoyData, currentYear = 2025, previousYear =
   }
 
   return (
-    <Card className="bg-white border border-slate-200 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-slate-900">
+    <Card className="bg-white border border-slate-200 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="border-b border-slate-100 pb-4">
+        <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">
           Year-over-Year Comparison
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-600 mt-1">
           {currentYear} vs {previousYear} Performance
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="pt-6">
+        <div className="space-y-5">
           {yoyData.map((item) => (
-            <div key={item.metric} className="border-2 border-slate-200 rounded-lg p-4 hover:shadow-sm transition-all">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-slate-700">{item.metric}</h3>
-                <div className={`${getChangeBg(item.change_percentage)} border-2 rounded-full px-3 py-1 flex items-center gap-2`}>
-                  <span className="text-lg">{getChangeIcon(item.change_percentage)}</span>
-                  <span className={`${getChangeColor(item.change_percentage)} font-bold text-sm`}>
+            <div key={item.metric} className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-slate-300 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-800 text-base tracking-wide">{item.metric}</h3>
+                <div className={`${getChangeBg(item.change_percentage)} border-2 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm`}>
+                  <span className="text-xl">{getChangeIcon(item.change_percentage)}</span>
+                  <span className={`${getChangeColor(item.change_percentage)} font-bold text-base tracking-tight`}>
                     {item.change_percentage > 0 && '+'}{item.change_percentage}%
                   </span>
                 </div>
