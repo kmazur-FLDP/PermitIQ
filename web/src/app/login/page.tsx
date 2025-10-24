@@ -43,41 +43,35 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Simple professional header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="relative w-10 h-10">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
+        <div className="text-center mb-10">
+          {/* FLDP Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="relative w-32 h-24">
               <Image
                 src="/fldp_final_color.png"
                 alt="FLDP Logo"
                 fill
-                sizes="40px"
+                sizes="128px"
                 className="object-contain"
                 priority
+                unoptimized
               />
             </div>
-            <div>
-              <div className="text-xl font-semibold text-slate-900">PermitIQ</div>
-              <div className="text-xs text-slate-500">Environmental Permit Intelligence</div>
-            </div>
+          </div>
+
+          {/* PermitIQ Branding */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">PermitIQ</h1>
+            <p className="text-base text-slate-600 font-medium">SWFWMD ERP Permit Intelligence</p>
           </div>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md">
-          {/* Welcome message */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-semibold text-slate-900 mb-2">Welcome back</h1>
-            <p className="text-slate-600">Sign in to access your dashboard</p>
-          </div>
-
-          {/* Login card */}
-          <Card className="border border-slate-200 shadow-sm">
-            <CardContent className="pt-6">
+        {/* Login card */}
+        <Card className="border-2 border-slate-200 shadow-lg">
+          <CardContent className="pt-6">
               <form onSubmit={handleLogin} className="space-y-5">
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
@@ -142,12 +136,6 @@ export default function LoginPage() {
                   )}
                 </Button>
               </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-slate-500">
-                  Need access? Contact your administrator
-                </p>
-              </div>
             </CardContent>
           </Card>
 
@@ -156,7 +144,6 @@ export default function LoginPage() {
             © 2025 Florida Land Development Professionals. All rights reserved.
           </div>
         </div>
-      </div>
     </div>
   )
 }
