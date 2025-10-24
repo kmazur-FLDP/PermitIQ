@@ -2,116 +2,173 @@ import { getUser, getUserProfile } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DashboardCharts } from '@/components/DashboardCharts'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { PermitStatusWidget } from '@/components/PermitStatusWidget'
 import { YearOverYearWidget } from '@/components/YearOverYearWidget'
-import { AcreageLeaderboard } from '@/components/AcreageLeaderboard'
+import dynamic from 'next/dynamic'
+
+// Lazy load heavy components for better performance
+const DashboardCharts = dynamic(() => import('@/components/DashboardCharts').then(mod => ({ default: mod.DashboardCharts })), {
+  ssr: true,
+  loading: () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {[...Array(6)].map((_, i) => (
+        <Card key={i} className="bg-white border border-slate-200 shadow-md">
+          <CardHeader className="border-b border-slate-100 pb-4">
+            <div className="h-6 w-40 bg-slate-200 animate-pulse rounded"></div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-[300px] bg-slate-100 animate-pulse rounded-lg"></div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+})
+
+const AcreageLeaderboard = dynamic(() => import('@/components/AcreageLeaderboard').then(mod => ({ default: mod.AcreageLeaderboard })), {
+  ssr: true,
+  loading: () => (
+    <Card className="bg-white border border-slate-200 shadow-md">
+      <CardHeader className="border-b border-slate-100 pb-4">
+        <div className="h-6 w-48 bg-slate-200 animate-pulse rounded"></div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <div className="space-y-3">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="h-16 bg-slate-100 animate-pulse rounded-xl"></div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+})
+
+// Enable ISR with 5-minute revalidation for better performance
+export const revalidate = 300 // Revalidate every 5 minutes
 
 async function getDashboardStats() {
   const supabase = await createClient()
   
-  // Get overall stats from materialized view
-  const { data: overallStats } = await supabase
-    .from('dashboard_overall_stats')
-    .select('*')
-    .single() as { data: { total_permits: number; permits_last_30_days: number; avg_acreage: number } | null }
+  // Parallelize all database queries for much faster loading
+  const [
+    overallStatsResult,
+    countyStatsResult,
+    permitTypeStatsResult,
+    statusStatsResult,
+    monthlyStatsResult,
+    timeStatsResult,
+    applicantStatsResult,
+    statusBreakdownResult,
+    yoyComparisonResult,
+    leaderboardResult
+  ] = await Promise.all([
+    // Get overall stats from materialized view
+    supabase
+      .from('dashboard_overall_stats')
+      .select('*')
+      .single(),
+    
+    // Get top counties using RPC function (bypasses RLS)
+    supabase.rpc('get_dashboard_county_stats'),
+    
+    // Get top permit types using RPC function (bypasses RLS)
+    supabase.rpc('get_dashboard_permit_type_stats'),
+    
+    // Get permit status breakdown
+    supabase
+      .from('dashboard_status_stats')
+      .select('status, permit_count'),
+    
+    // Get monthly trends for current year (2025) - Permit Issuance Trend
+    supabase
+      .from('dashboard_monthly_trends')
+      .select('month, permit_count')
+      .gte('month', `${new Date().getFullYear()}-01-01`)
+      .lte('month', `${new Date().getFullYear()}-12-31`)
+      .order('month', { ascending: true }),
+    
+    // Get permits over time (last 12 months) using RPC function (bypasses RLS)
+    supabase.rpc('get_dashboard_permits_over_time'),
+    
+    // Get top applicants
+    supabase
+      .from('dashboard_applicant_stats')
+      .select('applicant_name, permit_count')
+      .limit(10),
+    
+    // Get permit status breakdown using RPC function
+    supabase.rpc('get_permit_status_breakdown'),
+    
+    // Get year-over-year comparison using RPC function
+    supabase.rpc('get_year_over_year_comparison'),
+    
+    // Get acreage leaderboard using RPC function
+    supabase.rpc('get_acreage_leaderboard')
+  ])
   
-  // Get top counties using RPC function (bypasses RLS)
-  const { data: countyStats, error: countyError } = await supabase
-    .rpc('get_dashboard_county_stats')
+  // Extract data and handle errors
+  const { data: overallStats } = overallStatsResult as { data: { total_permits: number; permits_last_30_days: number; avg_acreage: number } | null }
   
-  if (countyError) {
-    console.error('County Stats Error:', countyError)
-  }
+  const { data: countyStats, error: countyError } = countyStatsResult
+  if (countyError) console.error('County Stats Error:', countyError)
   
+  const { data: permitTypeStats, error: permitTypeError } = permitTypeStatsResult
+  if (permitTypeError) console.error('Permit Type Stats Error:', permitTypeError)
+  
+  const { data: statusStats } = statusStatsResult
+  const { data: monthlyStats } = monthlyStatsResult
+  
+  const { data: timeStats, error: timeError } = timeStatsResult
+  if (timeError) console.error('Permits Over Time Error:', timeError)
+  
+  const { data: applicantStats } = applicantStatsResult
+  
+  const { data: statusBreakdown, error: statusBreakdownError } = statusBreakdownResult
+  if (statusBreakdownError) console.error('Status Breakdown Error:', statusBreakdownError)
+  
+  const { data: yoyComparison, error: yoyError } = yoyComparisonResult
+  if (yoyError) console.error('Year-over-Year Comparison Error:', yoyError)
+  
+  const { data: leaderboard, error: leaderboardError } = leaderboardResult
+  if (leaderboardError) console.error('Acreage Leaderboard Error:', leaderboardError)
+  
+  // Transform data
   const topCounties = (countyStats || []).map((row: { county: string; permit_count: number }) => ({
     county: row.county,
     count: row.permit_count
   }))
-
-  // Get top permit types using RPC function (bypasses RLS)
-  const { data: permitTypeStats, error: permitTypeError } = await supabase
-    .rpc('get_dashboard_permit_type_stats')
-  
-  if (permitTypeError) {
-    console.error('Permit Type Stats Error:', permitTypeError)
-  }
   
   const topPermitTypes = (permitTypeStats || []).map((row: { permit_type: string; permit_count: number }) => ({
     type: row.permit_type,
     count: row.permit_count
   }))
   
-  // Get permit status breakdown
-  const { data: statusStats } = await supabase
-    .from('dashboard_status_stats')
-    .select('status, permit_count')
-  
   const permitsByStatus = statusStats?.map((row: { status: string; permit_count: number }) => ({
     status: row.status,
     count: row.permit_count
   })) || []
-  
-  // Get monthly trends for current year (2025) - Permit Issuance Trend
-  const currentYear = new Date().getFullYear()
-  const { data: monthlyStats } = await supabase
-    .from('dashboard_monthly_trends')
-    .select('month, permit_count')
-    .gte('month', `${currentYear}-01-01`)
-    .lte('month', `${currentYear}-12-31`)
-    .order('month', { ascending: true })
   
   const trendData = (monthlyStats || []).map((row: { month: string; permit_count: number }) => ({
     month: new Date(row.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
     count: row.permit_count
   }))
   
-  // Get permits over time (last 12 months) using RPC function (bypasses RLS)
-  const { data: timeStats, error: timeError } = await supabase
-    .rpc('get_dashboard_permits_over_time')
-  
-  if (timeError) {
-    console.error('Permits Over Time Error:', timeError)
-  }
-  
   const permitsOverTime = (timeStats || []).map((row: { month: string; permit_count: number }) => ({
     month: row.month,
     count: row.permit_count
   }))
-  
-  // Get top applicants
-  const { data: applicantStats } = await supabase
-    .from('dashboard_applicant_stats')
-    .select('applicant_name, permit_count')
-    .limit(10)
   
   const topApplicants = (applicantStats || []).map((row: { applicant_name: string; permit_count: number }) => ({
     applicant: row.applicant_name,
     count: row.permit_count
   }))
   
-  // Get permit status breakdown using RPC function
-  const { data: statusBreakdown, error: statusBreakdownError } = await supabase
-    .rpc('get_permit_status_breakdown')
-  
-  if (statusBreakdownError) {
-    console.error('Status Breakdown Error:', statusBreakdownError)
-  }
-  
   const permitStatusData = (statusBreakdown || []).map((row: { status_category: string; permit_count: number; percentage: number }) => ({
     status_category: row.status_category,
     permit_count: row.permit_count,
     percentage: row.percentage
   }))
-  
-  // Get year-over-year comparison using RPC function
-  const { data: yoyComparison, error: yoyError } = await supabase
-    .rpc('get_year_over_year_comparison')
-  
-  if (yoyError) {
-    console.error('Year-over-Year Comparison Error:', yoyError)
-  }
   
   const yoyData = (yoyComparison || []).map((row: { metric: string; current_year_value: number; previous_year_value: number; change_count: number; change_percentage: number }) => ({
     metric: row.metric,
@@ -120,14 +177,6 @@ async function getDashboardStats() {
     change_count: row.change_count,
     change_percentage: row.change_percentage
   }))
-  
-  // Get acreage leaderboard using RPC function
-  const { data: leaderboard, error: leaderboardError } = await supabase
-    .rpc('get_acreage_leaderboard')
-  
-  if (leaderboardError) {
-    console.error('Acreage Leaderboard Error:', leaderboardError)
-  }
   
   const leaderboardData = (leaderboard || []).map((row: { rank: number; permit_number: string; applicant_name: string; project_name: string; county: string; permit_type: string; acreage: number; issue_date: string; permit_status: string }) => ({
     rank: row.rank,
@@ -180,7 +229,7 @@ export default async function DashboardPage() {
             <h1 className="text-5xl font-bold text-slate-900 mb-3 tracking-tight">
               Dashboard
             </h1>
-            <div className="absolute bottom-0 left-0 w-20 h-1 bg-gradient-to-r from-blue-600 to-cyan-500"></div>
+            <div className="absolute bottom-0 left-0 w-20 h-1 bg-linear-to-r from-blue-600 to-cyan-500"></div>
           </div>
           <p className="text-lg text-slate-600 mt-4">
             Environmental permit intelligence and analytics
