@@ -61,7 +61,8 @@ async function getDashboardStats() {
     applicantStatsResult,
     statusBreakdownResult,
     yoyComparisonResult,
-    leaderboardResult
+    leaderboardResult,
+    recentPermitsResult
   ] = await Promise.all([
     // Get top counties using RPC function (bypasses RLS)
     supabase.rpc('get_dashboard_county_stats'),
@@ -96,7 +97,13 @@ async function getDashboardStats() {
     supabase.rpc('get_year_over_year_comparison'),
     
     // Get acreage leaderboard using RPC function
-    supabase.rpc('get_acreage_leaderboard')
+    supabase.rpc('get_acreage_leaderboard'),
+    
+    // Get permits from last 30 days (direct query)
+    supabase
+      .from('erp_permits')
+      .select('permit_number', { count: 'exact', head: true })
+      .gte('issue_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
   ])
   
   // Extract data and handle errors
@@ -124,6 +131,9 @@ async function getDashboardStats() {
   
   const { data: leaderboard, error: leaderboardError } = leaderboardResult
   if (leaderboardError) console.error('Acreage Leaderboard Error:', leaderboardError)
+  
+  const { count: recentPermitsCount, error: recentPermitsError } = recentPermitsResult
+  if (recentPermitsError) console.error('Recent Permits Error:', recentPermitsError)
   
   // Transform data
   const topCounties = (countyStats || []).map((row: { county: string; permit_count: number }) => ({
@@ -186,8 +196,8 @@ async function getDashboardStats() {
   // Calculate overall stats from status breakdown (ensures consistency)
   const totalPermits = (statusBreakdown || []).reduce((sum: number, row: { permit_count: number }) => sum + row.permit_count, 0)
   
-  // Get recent permits count from year-over-year data (if available)
-  const recentPermits = (yoyData || []).find((row) => row.metric === 'Last 30 Days')?.current_year_value || 0
+  // Get recent permits count from direct query (last 30 days)
+  const recentPermits = recentPermitsCount || 0
   
   // Calculate average acreage from county stats
   const avgAcreage = (countyStats || []).length > 0
