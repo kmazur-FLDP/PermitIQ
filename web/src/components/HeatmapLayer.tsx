@@ -26,7 +26,7 @@ declare global {
   }
 }
 
-type DateRange = 'all' | '30' | '60' | '90' | '180' | '365'
+type DateRange = 'all' | '180' | '365' | '730' | '1095'
 
 interface HeatmapLayerProps {
   permits: Permit[]
@@ -51,12 +51,11 @@ export default function HeatmapLayer({ permits, dateRange = 'all' }: HeatmapLaye
       // Shorter date ranges = fewer permits = need higher intensity to be visible
       const getIntensityMultiplier = (range: DateRange, permitCount: number): number => {
         // Base intensity increases for smaller datasets
-        if (range === '30') return permitCount < 100 ? 8.0 : permitCount < 500 ? 5.0 : 3.0
-        if (range === '60') return permitCount < 200 ? 6.0 : permitCount < 1000 ? 4.0 : 2.5
-        if (range === '90') return permitCount < 300 ? 5.0 : permitCount < 1500 ? 3.5 : 2.0
-        if (range === '180') return permitCount < 500 ? 4.0 : permitCount < 2000 ? 3.0 : 1.8
-        if (range === '365') return permitCount < 1000 ? 3.0 : permitCount < 3000 ? 2.0 : 1.5
-        return 1.0 // 'all' time or 5 years - use default
+        if (range === '180') return permitCount < 500 ? 4.0 : permitCount < 2000 ? 3.0 : 1.8  // 6 months
+        if (range === '365') return permitCount < 1000 ? 3.0 : permitCount < 3000 ? 2.0 : 1.5 // 1 year
+        if (range === '730') return permitCount < 2000 ? 2.5 : permitCount < 5000 ? 1.8 : 1.3 // 2 years
+        if (range === '1095') return permitCount < 3000 ? 2.0 : permitCount < 7000 ? 1.5 : 1.2 // 3 years
+        return 1.0 // 'all' time - use default
       }
       
       const intensityMultiplier = getIntensityMultiplier(dateRange, permits.length)

@@ -103,7 +103,7 @@ function parseGeometry(geometryJson: Json | null | undefined): [number, number][
 }
 
 type ViewMode = 'markers' | 'heatmap'
-type DateRange = 'all' | '30' | '60' | '90' | '180' | '365'
+type DateRange = 'all' | '180' | '365' | '730' | '1095'
 type DataRange = '5years' | 'all'
 type BaseMapType = 'street' | 'satellite' | 'terrain'
 
@@ -544,11 +544,10 @@ export function PermitMap({ initialPermits = [] }: PermitMapProps) {
               className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="all">All Time</option>
-              <option value="30">Last 30 Days</option>
-              <option value="60">Last 60 Days</option>
-              <option value="90">Last 90 Days</option>
               <option value="180">Last 6 Months</option>
-              <option value="365">Last Year</option>
+              <option value="365">Last 1 Year</option>
+              <option value="730">Last 2 Years</option>
+              <option value="1095">Last 3 Years</option>
             </select>
           </div>
 
