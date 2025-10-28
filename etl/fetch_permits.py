@@ -399,6 +399,15 @@ class PermitIQETL:
                     logger.info("Statistics calculated successfully")
                 except Exception as e:
                     logger.warning(f"Statistics calculation failed: {e}")
+                
+                # Step 5: Refresh dashboard materialized views
+                logger.info("Step 5: Refreshing dashboard materialized views")
+                try:
+                    self.supabase.rpc('refresh_dashboard_stats').execute()
+                    logger.info("Dashboard materialized views refreshed successfully")
+                except Exception as e:
+                    logger.warning(f"Dashboard materialized view refresh failed: {e}")
+                    logger.warning("Dashboard stats may show stale data until views are manually refreshed")
             
             # Summary
             duration = (datetime.now() - start_time).total_seconds()

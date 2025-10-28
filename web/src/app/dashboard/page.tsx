@@ -51,8 +51,8 @@ async function getDashboardStats() {
   const supabase = await createClient()
   
   // Parallelize all database queries for much faster loading
+  // Note: Using RPC functions instead of materialized views for real-time consistency
   const [
-    overallStatsResult,
     countyStatsResult,
     permitTypeStatsResult,
     statusStatsResult,
@@ -63,22 +63,14 @@ async function getDashboardStats() {
     yoyComparisonResult,
     leaderboardResult
   ] = await Promise.all([
-    // Get overall stats from materialized view
-    supabase
-      .from('dashboard_overall_stats')
-      .select('*')
-      .single(),
-    
     // Get top counties using RPC function (bypasses RLS)
     supabase.rpc('get_dashboard_county_stats'),
     
     // Get top permit types using RPC function (bypasses RLS)
     supabase.rpc('get_dashboard_permit_type_stats'),
     
-    // Get permit status breakdown
-    supabase
-      .from('dashboard_status_stats')
-      .select('status, permit_count'),
+    // Get permit status breakdown using RPC function
+    supabase.rpc('get_permit_status_breakdown'),
     
     // Get monthly trends for current year (2025) - Permit Issuance Trend
     supabase
@@ -97,7 +89,7 @@ async function getDashboardStats() {
       .select('applicant_name, permit_count')
       .limit(10),
     
-    // Get permit status breakdown using RPC function
+    // Get permit status breakdown using RPC function (for widget)
     supabase.rpc('get_permit_status_breakdown'),
     
     // Get year-over-year comparison using RPC function
@@ -108,15 +100,15 @@ async function getDashboardStats() {
   ])
   
   // Extract data and handle errors
-  const { data: overallStats } = overallStatsResult as { data: { total_permits: number; permits_last_30_days: number; avg_acreage: number } | null }
-  
   const { data: countyStats, error: countyError } = countyStatsResult
   if (countyError) console.error('County Stats Error:', countyError)
   
   const { data: permitTypeStats, error: permitTypeError } = permitTypeStatsResult
   if (permitTypeError) console.error('Permit Type Stats Error:', permitTypeError)
   
-  const { data: statusStats } = statusStatsResult
+  const { data: statusStats, error: statusStatsError } = statusStatsResult
+  if (statusStatsError) console.error('Status Stats Error:', statusStatsError)
+  
   const { data: monthlyStats } = monthlyStatsResult
   
   const { data: timeStats, error: timeError } = timeStatsResult
@@ -144,10 +136,11 @@ async function getDashboardStats() {
     count: row.permit_count
   }))
   
-  const permitsByStatus = statusStats?.map((row: { status: string; permit_count: number }) => ({
-    status: row.status,
+  // Note: permitsByStatus is now calculated from statusBreakdown (same data, just reformatted)
+  const permitsByStatus = (statusStats || []).map((row: { status_category: string; permit_count: number }) => ({
+    status: row.status_category,
     count: row.permit_count
-  })) || []
+  }))
   
   const trendData = (monthlyStats || []).map((row: { month: string; permit_count: number }) => ({
     month: new Date(row.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
@@ -190,16 +183,27 @@ async function getDashboardStats() {
     permit_status: row.permit_status
   }))
   
+  // Calculate overall stats from status breakdown (ensures consistency)
+  const totalPermits = (statusBreakdown || []).reduce((sum: number, row: { permit_count: number }) => sum + row.permit_count, 0)
+  
+  // Get recent permits count from year-over-year data (if available)
+  const recentPermits = (yoyData || []).find((row) => row.metric === 'Last 30 Days')?.current_year_value || 0
+  
+  // Calculate average acreage from county stats
+  const avgAcreage = (countyStats || []).length > 0
+    ? Math.round(((countyStats || []).reduce((sum: number, row: { avg_acreage: number }) => sum + (row.avg_acreage || 0), 0) / (countyStats || []).length) * 100) / 100
+    : 0
+  
   return {
-    totalPermits: overallStats?.total_permits || 0,
-    recentPermits: overallStats?.permits_last_30_days || 0,
+    totalPermits,
+    recentPermits,
     topCounties,
     topPermitTypes,
     permitsByStatus,
     trendData,
     permitsOverTime,
     topApplicants,
-    avgAcreage: Math.round((overallStats?.avg_acreage || 0) * 100) / 100,
+    avgAcreage,
     topCounty: topCounties[0]?.county || 'N/A',
     topCountyCount: topCounties[0]?.count || 0,
     permitStatusData,
