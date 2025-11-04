@@ -14,8 +14,8 @@ export function ModernHeader({ userEmail, userRole, onSignOut }: ModernHeaderPro
   const pathname = usePathname()
 
   const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Map View', href: '/map', icon: '🗺️' },
+    { name: 'Map View', href: '/map', icon: '�️' },
+    { name: 'Dashboard', href: '/dashboard', icon: '�' },
     ...(userRole === 'admin' ? [{ name: 'Admin', href: '/admin', icon: '⚙️' }] : []),
   ]
 
