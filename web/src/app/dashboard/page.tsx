@@ -1,5 +1,3 @@
-import { getUser, getUserProfile } from '@/lib/auth'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -225,17 +223,10 @@ async function getDashboardStats() {
 }
 
 export default async function DashboardPage() {
-  const user = await getUser()
-  const profile = await getUserProfile()
-
-  if (!user) {
-    redirect('/login')
-  }
-
   const stats = await getDashboardStats()
 
   return (
-    <DashboardLayout userEmail={user.email || null} userRole={profile?.role || null}>
+    <DashboardLayout userEmail={null} userRole={null}>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-10">
