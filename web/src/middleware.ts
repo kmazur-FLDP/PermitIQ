@@ -35,21 +35,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/map', '/competitors', '/alerts', '/admin']
+  // Site is now public - only protect admin routes
+  const protectedRoutes = ['/admin']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
 
-  // Redirect to login if accessing protected route without auth
+  // Redirect to dashboard if accessing admin route without auth or without admin role
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Redirect to dashboard if already logged in and trying to access login
-  if (request.nextUrl.pathname === '/login' && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
